@@ -10,28 +10,17 @@ try:
 except ImporError:
     has_pixell = False
 
-from .decorators import array, inMpc
-from .lensing import BaseLensing
+from .helpers.cosmology import BaseCosmo
+from .helpers.decorators import array, inMpc
+from .helpers.lensing import BaseLensing
 
 
-class BaseProfile(BaseLensing):
+#class Profile(BaseCosmo):
+class Profile:
 
-    def __init__(self, mvir, z, cosmo=Planck15,
-                 los_loglimit=6, Rlos=200, resampling=20,
+    def __init__(self, los_loglimit=6, Rlos=200, resampling=20,
                  logleft=-10, left_samples=100):
         """Initialize a profile object
-
-        Should generalize arguments to include pressure profiles
-        and other kinds
-
-        Parameters
-        ----------
-        mvir : float or np.ndarray of floats
-            total mass(es) (definition arbitrary)
-        z : float or np.ndarray of floats
-            redshift(s)
-        cosmo : `astropy.cosmology.FLRW` object, optional
-            cosmology object
 
         Optional parameters for numerical integration
         for the (enclosed) surface density (see notes below)
@@ -70,13 +59,7 @@ class BaseProfile(BaseLensing):
         `quad` (which is more accurate but a lot slower than the
         currently used `simps` integration).
         """
-        if isinstance(mvir, u.Quantity):
-            mvir = mvir.to(u.Msun).value
-        if not np.iterable(mvir):
-            mvir = np.array([mvir])
-        self.mvir = mvir
-        self.z = self._define_array(z)
-        super(BaseProfile, self).__init__(z, cosmo=cosmo)
+        #super().__init__(cosmo=cosmo)
         # for numerical integration -- perhaps these could be passed
         # in a single dictionary
         self.los_loglimit = los_loglimit
@@ -99,7 +82,7 @@ class BaseProfile(BaseLensing):
 
     def _define_array(self, x):
         if not np.iterable(x):
-            return x * np.ones_like(self.mvir)
+            return x * np.ones_like(self._shape)
         return x
 
     ### methods ###
@@ -206,3 +189,4 @@ class BaseProfile(BaseLensing):
         """
         qsd = self.quad_surface_density(R)
         sd = self.surface_density(R)
+

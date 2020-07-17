@@ -1,12 +1,13 @@
-import numpy a s np
+import numpy as np
 
 from .nfw import BaseNFW
+
 
 class tNFW5(BaseNFW):
     """INCOMPLETE (but you get the idea)"""
 
-    def __init__(self, mvir, c, rt, z, **kwargs):
-        super(tNFW5, self).__init__(mvir, c, z, **kwargs)
+    def __init__(self, mass, c, rt, z, **kwargs):
+        super().__init__(mass, c, z, **kwargs)
         self.rt = rt
 
     ### methods ###

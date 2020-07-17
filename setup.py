@@ -38,8 +38,8 @@ setup(
     description='Calculation of common astrophysical profiles',
     author='Cristobal Sifon',
     author_email='cristobal.sifon@pucv.cl',
-    long_description=read('README.md'),
-    long_description_content_type='text/markdown',
+    long_description=read('README.rst'),
+    long_description_content_type='text/x-rst',
     url='https://github.com/cristobal-sifon/profiley',
     packages=find_packages(),
     classifiers=[

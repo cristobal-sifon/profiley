@@ -1,5 +1,5 @@
 """Profile objects for galaxy cluster modeling"""
 
-__version__ = '0.0.1'
+__version__ = '1.0.0b0'
 
-from .nfw import NFW, gNFW
+

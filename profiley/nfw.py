@@ -2,22 +2,22 @@ from astropy.cosmology import Planck15
 import numpy as np
 from scipy.special import sici
 
-from .decorators import array, inMpc
-from .profile import BaseProfile
+from .helpers.decorators import array, inMpc
+from .profiles import DensityProfile
 
 
-class BaseNFW(BaseProfile):
+class BaseNFW(DensityProfile):
 
-    def __init__(self, mvir, c, z, overdensity=200, background='c', cosmo=Planck15):
+    def __init__(self, mass, c, z, overdensity=200, background='c', cosmo=Planck15):
         assert background in 'cm', \
             "background must be either 'c' (critical) or 'm' (mean)"
-        super(BaseNFW, self).__init__(mvir, z, cosmo=cosmo)
+        super().__init__(mass, z, cosmo=cosmo)
         self._background = background
         self._concentration = self._define_array(c)
         self._overdensity = overdensity
         self._deltac = None
         self._rs = None
-        self._rvir = None
+        self._radius = None
         self._sigma_s = None
 
     ### attributes ###
@@ -44,15 +44,15 @@ class BaseNFW(BaseProfile):
     @property
     def rs(self):
         if self._rs is None:
-            self._rs = self.rvir / self.c
+            self._rs = self.radius / self.c
         return self._rs
 
     @property
-    def rvir(self):
-        if self._rvir is None:
-            self._rvir = \
-                (self.mvir / (4*np.pi/3) / (self.overdensity*self.rho_bg))**(1/3)
-        return self._rvir
+    def radius(self):
+        if self._radius is None:
+            self._radius = \
+                (self.mass / (4*np.pi/3) / (self.overdensity*self.rho_bg))**(1/3)
+        return self._radius
 
     @property
     def sigma_s(self):
@@ -63,8 +63,8 @@ class BaseNFW(BaseProfile):
 
 class gNFW(BaseNFW):
 
-    def __init__(self, mvir, c, alpha, z, **kwargs):
-        super(gNFW, self).__init__(mvir, c, z, **kwargs)
+    def __init__(self, mass, c, alpha, z, **kwargs):
+        super(gNFW, self).__init__(mass, c, z, **kwargs)
         self.alpha = self._define_array(alpha)
 
     ### main methods ###
@@ -79,8 +79,8 @@ class gNFW(BaseNFW):
 class NFW(BaseNFW):
     """Navarro-Frenk-White profile"""
 
-    def __init__(self, mvir, c, z, **kwargs):
-        super(NFW, self).__init__(mvir, c, z, **kwargs)
+    def __init__(self, mass, c, z, **kwargs):
+        super(NFW, self).__init__(mass, c, z, **kwargs)
 
     ### main methods ###
 
@@ -127,6 +127,6 @@ class NFW(BaseNFW):
         ki = k * self.rs
         bs, bc = sici(ki)
         asi, ac = sici((1+self.c)*ki)
-        return 4 * np.pi * self.rho_bg * self.deltac * self.rs**3 / self.mvir \
+        return 4 * np.pi * self.rho_bg * self.deltac * self.rs**3 / self.mass \
             * (np.sin(ki)*(asi-bs) - (np.sin(self.c*ki) / ((1+self.c)*ki)) \
                + np.cos(ki)*(ac-bc))
