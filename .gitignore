@@ -1,0 +1,11 @@
+test.ipynb
+
+*.egg-info
+build
+dist
+
+*~
+*.save
+*.pyc
+__pycache__
+.ipynb_checkpoints
