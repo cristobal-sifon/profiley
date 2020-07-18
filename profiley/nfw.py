@@ -1,17 +1,28 @@
+from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
 from scipy.special import sici
 
+from .core import Profile
 from .helpers.decorators import array, inMpc
+from .helpers.lensing import BaseLensing
 from .profiles import DensityProfile
 
 
-class BaseNFW(DensityProfile):
+class BaseNFW(BaseLensing, Profile):
 
-    def __init__(self, mass, c, z, overdensity=200, background='c', cosmo=Planck15):
+    def __init__(self, mass, c, z, overdensity=200, background='c',
+                 cosmo=Planck15, numeric_kwargs={}):
         assert background in 'cm', \
             "background must be either 'c' (critical) or 'm' (mean)"
-        super().__init__(mass, z, cosmo=cosmo)
+        if isinstance(mass, u.Quantity):
+            mass = mass.to(u.Msun).value
+        if not np.iterable(mass):
+            mass = np.array([mass])
+        self.mass = mass
+        self._shape = self.mass.shape
+        self.z = self._define_array(z)
+        super().__init__(self.z, cosmo=cosmo, **numeric_kwargs)
         self._background = background
         self._concentration = self._define_array(c)
         self._overdensity = overdensity
@@ -61,10 +72,10 @@ class BaseNFW(DensityProfile):
         return self._sigma_s
 
 
-class gNFW(BaseNFW):
+class GNFW(BaseNFW):
 
-    def __init__(self, mass, c, alpha, z, **kwargs):
-        super(gNFW, self).__init__(mass, c, z, **kwargs)
+    def __init__(self, mass, c, z, alpha, **kwargs):
+        super().__init__(mass, c, z, **kwargs)
         self.alpha = self._define_array(alpha)
 
     ### main methods ###
