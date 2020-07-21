@@ -6,7 +6,6 @@ from scipy.special import sici
 from .core import Profile
 from .helpers.decorators import array, inMpc
 from .helpers.lensing import BaseLensing
-from .profiles import DensityProfile
 
 
 class BaseNFW(BaseLensing, Profile):
@@ -73,18 +72,35 @@ class BaseNFW(BaseLensing, Profile):
 
 
 class GNFW(BaseNFW):
+    """Generalized NFW profile
 
-    def __init__(self, mass, c, z, alpha, **kwargs):
+    Density described by
+
+    .. math::
+
+        \rho(r) = \frac{\delta_\mathrm{c}\rho_\mathrm{bg}}
+                    {(r/r_\mathrm{s})^\gamma
+                        \left[1+(r/r_\mathrm{s})^\alpha\right]^(\beta-\gamma)/\alpha
+
+    A common but more restriced GNFW profile can be recovered by setting
+    alpha=1, beta=3.
+
+    """
+
+    def __init__(self, mass, c, z, alpha, beta, gamma, **kwargs):
         super().__init__(mass, c, z, **kwargs)
         self.alpha = self._define_array(alpha)
+        self.beta = self._define_array(beta)
+        self.gamma = self._define_array(gamma)
 
     ### main methods ###
 
     @inMpc
     @array
     def density(self, R):
+        exp = (self.beta-self.gamma) / self.alpha
         return self.deltac * self.rho_bg \
-            / ((R/self.rs)**self.alpha * (1+R/self.rs)**(3-self.alpha))
+            / ((R/self.rs)**self.gamma * (1+(R/self.rs)**alpha)**exp)
 
 
 class NFW(BaseNFW):
