@@ -74,7 +74,7 @@ class BaseNFW(BaseLensing, Profile):
 class GNFW(BaseNFW):
     """Generalized NFW profile
 
-    Density described by
+    Density profile described by
 
     .. math::
 
@@ -104,7 +104,15 @@ class GNFW(BaseNFW):
 
 
 class NFW(BaseNFW):
-    """Navarro-Frenk-White profile"""
+    """Navarro-Frenk-White profile (Navarro et al. 1995)
+
+    Density profile:
+
+    .. math::
+
+        \rho(r) = \frac{\delta_\mathrm{c}\rho_\mathrm{bg}}
+                    {(r/r_\mathrm{s})(1+r/r_\mathrm{s})^2}
+    """
 
     def __init__(self, mass, c, z, **kwargs):
         super(NFW, self).__init__(mass, c, z, **kwargs)
@@ -114,6 +122,7 @@ class NFW(BaseNFW):
     @inMpc
     @array
     def density(self, R):
+        """Three-dimensional density profile"""
         return self.deltac * self.rho_bg / (R/self.rs * (1+R/self.rs)**2)
 
     @inMpc

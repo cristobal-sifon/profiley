@@ -90,7 +90,7 @@ class Profile:
     @inMpc
     @array
     def surface_density(self, R, single_R=False):
-        """Calculate surface density by numerical integration
+        """Surface density at radius R, calculated by numerical integration
 
         `single_R` refers to whether we use a single R array
         to integrate all profiles (assuming more than one were defined).
@@ -121,6 +121,7 @@ class Profile:
     @inMpc
     @array
     def enclosed_surface_density(self, R):
+        """Surface density enclosed within R, calculated numerically"""
         logR = np.log10(R)
         # resample R
         Ro = np.vstack([
@@ -139,8 +140,8 @@ class Profile:
     def excess_surface_density(self, R):
         """Excess surface density at projected distance(s) R
 
-        The excess surface density or ESD is the lensing observable
-        in physical units, and is calculated as:
+        The excess surface density or ESD is the galaxy weak lensing
+        observable in physical units, and is calculated as:
             ESD(R) = Sigma(<R) - Sigma(R)
         where Sigma(<R) is the average surface density within R and
         Sigma(R) is the surface density at distance R
