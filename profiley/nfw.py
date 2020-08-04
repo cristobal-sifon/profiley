@@ -97,10 +97,10 @@ class GNFW(BaseNFW):
 
     @inMpc
     @array
-    def density(self, R):
+    def density(self, r):
         exp = (self.beta-self.gamma) / self.alpha
         return self.deltac * self.rho_bg \
-            / ((R/self.rs)**self.gamma * (1+(R/self.rs)**alpha)**exp)
+            / ((r/self.rs)**self.gamma * (1+(r/self.rs)**alpha)**exp)
 
 
 class NFW(BaseNFW):
@@ -121,9 +121,9 @@ class NFW(BaseNFW):
 
     @inMpc
     @array
-    def density(self, R):
+    def density(self, r):
         """Three-dimensional density profile"""
-        return self.deltac * self.rho_bg / (R/self.rs * (1+R/self.rs)**2)
+        return self.deltac * self.rho_bg / (r/self.rs * (1+r/self.rs)**2)
 
     @inMpc
     @array
