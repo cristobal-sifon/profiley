@@ -82,7 +82,7 @@ class Profile:
 
     def _define_array(self, x):
         if not np.iterable(x):
-            return x * np.ones_like(self._shape)
+            return x * np.ones(self._shape)
         return x
 
     ### methods ###
@@ -156,6 +156,36 @@ class Profile:
         """
         return self.enclosed_surface_density(R) \
             - self.surface_density(R)
+
+    @inMpc
+    @array
+    def offset_surface_density(self, R, Roff, **kwargs):
+        """Surface density measured around a position offset from the
+        profile center
+
+        Parameters
+        ----------
+        R : np.ndarray, shape (N,)
+            radii at which to calculate the offset surface density
+        Roff : np.ndarray, shape (M,)
+            offsets with respect to the profile center
+
+        Returns
+        -------
+        offset_surface_density : np.ndarray
+            offset surface density
+        """
+        if not np.iterable(Roff):
+            Roff = np.array([Roff])
+        assert len(Roff.shape) == 1, 'Roff must be 1d'
+        Roff = Roff[:,None,None,None]
+        theta = np.linspace(0, 2*np.pi, 500)[:,None,None]
+        x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta))**0.5
+        # looping slower but avoids memory issues
+        sd_off = np.array(
+            [simps(self.surface_density(xi, **kwargs), theta, axis=0)
+             for xi in x])
+        return sd_off / (2*np.pi)
 
     def fourier(self, rmax=10, dr=0.1):
         """This is not working yet! Might just need to fall back to quad"""

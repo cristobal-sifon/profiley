@@ -110,8 +110,12 @@ class BaseLensing(BaseCosmo):
         return A / (self.Dl*self.beta(zs=zs))
 
     #@float_args
-    def convergence(self, R, zs=None, **kwargs):
-        return self.surface_density(R) / self.sigma_crit(zs=zs, **kwargs)
+    def convergence(self, R, zs=None, Roff=None, **kwargs):
+        if Roff is None:
+            s = self.surface_density(R)
+        else:
+            s = self.offset_surface_density(R, Roff)
+        return s / self.sigma_crit(zs=zs, **kwargs)
 
 
 class Lens(BaseCosmo):
