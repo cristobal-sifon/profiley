@@ -51,4 +51,3 @@ def float_args(f):
                 raise TypeError(msg) from e
         return f(*args, **kwargs)
     return decorated
-

@@ -4,6 +4,12 @@ import numpy as np
 from scipy.integrate import cumtrapz, quad, simps
 
 try:
+    import pyccl as ccl
+    has_ccl = True
+except ImportError:
+    has_ccl = False
+
+try:
     import pixell.enmap
     import pixell.utils
     has_pixell = True
@@ -96,7 +102,7 @@ class Profile:
         to integrate all profiles (assuming more than one were defined).
         If True, it seems both this function and `enclosed_surface_density`
         work to about 10 Mpc within ~0.1% (compared to the analytical NFW)
-        but they go wild beyond that, reaching 10% at 100 Mpc for the 
+        but they go wild beyond that, reaching 10% at 100 Mpc for the
         surface density and 1% for the enclosed surface density.
 
         NOTE: the above seems to be true also for multiple R (which I'm
@@ -157,8 +163,41 @@ class Profile:
         return self.enclosed_surface_density(R) \
             - self.surface_density(R)
 
-    @inMpc
-    @array
+    def offset(self, func, R, Roff, **kwargs):
+        """Calcuate any profile with a reference point different
+        from its center
+
+        Parameters
+        ----------
+        func : callable
+            the funcion to calculate
+        R : np.ndarray, shape (N,)
+            radii at which to calculate the offset surface density
+        Roff : np.ndarray, shape (M,)
+            offsets with respect to the profile center
+
+        Returns
+        -------
+        offset : np.ndarray
+            offset profile
+
+        Notes
+        -----
+        kwargs are passed to ``func``
+        """
+        if not np.iterable(Roff):
+            Roff = np.array([Roff])
+        assert len(Roff.shape) == 1, 'Roff must be 1d'
+        Roff = Roff[:,None,None,None]
+        theta = np.linspace(0, 2*np.pi, 500)[:,None,None]
+        x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta))**0.5
+        # looping slower but avoids memory issues
+        off = np.array([simps(func(xi, **kwargs), theta, axis=0) for xi in x])
+        return off / (2*np.pi)
+
+    def offset_density(self, R, Roff):
+        return self.offset(self.density, R, Roff)
+
     def offset_surface_density(self, R, Roff, **kwargs):
         """Surface density measured around a position offset from the
         profile center
@@ -175,17 +214,24 @@ class Profile:
         offset_surface_density : np.ndarray
             offset surface density
         """
-        if not np.iterable(Roff):
-            Roff = np.array([Roff])
-        assert len(Roff.shape) == 1, 'Roff must be 1d'
-        Roff = Roff[:,None,None,None]
-        theta = np.linspace(0, 2*np.pi, 500)[:,None,None]
-        x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta))**0.5
-        # looping slower but avoids memory issues
-        sd_off = np.array(
-            [simps(self.surface_density(xi, **kwargs), theta, axis=0)
-             for xi in x])
-        return sd_off / (2*np.pi)
+        # if not np.iterable(Roff):
+        #     Roff = np.array([Roff])
+        # assert len(Roff.shape) == 1, 'Roff must be 1d'
+        # Roff = Roff[:,None,None,None]
+        # theta = np.linspace(0, 2*np.pi, 500)[:,None,None]
+        # x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta))**0.5
+        # # looping slower but avoids memory issues
+        # sd_off = np.array(
+        #     [simps(self.surface_density(xi, **kwargs), theta, axis=0)
+        #      for xi in x])
+        # return sd_off / (2*np.pi)
+        return self.offset(self.surface_density, R, Roff, **kwargs)
+
+    def offset_enclosed_surface_density(self, R, Roff, **kwargs):
+        return self.offset(self.enclosed_surface_density, R, Roff, **kwargs)
+
+    def offset_excess_surface_density(self, R, Roff, **kwargs):
+        return self.offset(self.excess_surface_density, R, Roff, **kwargs)
 
     def fourier(self, rmax=10, dr=0.1):
         """This is not working yet! Might just need to fall back to quad"""
@@ -201,23 +247,23 @@ class Profile:
         g = g * dr * np.exp(1j*k[:,None]*rmax) / (2*np.pi)**0.5
         return k, g
 
-    #def kfilter(self, R, filter_file):
+    # def twohalo(self, func, R, logm=np.logspace(12,16,41), **kwargs):
+    #     return
 
     ### auxiliary methods to test integration performance ###
 
     @inMpc
     @array
-    def quad_surface_density(self, R):
+    def _quad_surface_density(self, R):
         integrand = lambda r, Ro: self.density((r**2+Ro**2)**0.5)
         return np.array([[quad(integrand, 0, np.inf, args=(Rij,))
                           for Rij in Ri] for Ri in R])
 
     @inMpc
     @array
-    def test_integration(self, R, output=None):
+    def _test_integration(self, R, output=None):
         """Test the fast-integration methods against the slow
         but accurate quad function
         """
         qsd = self.quad_surface_density(R)
         sd = self.surface_density(R)
-

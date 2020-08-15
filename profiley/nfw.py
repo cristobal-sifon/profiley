@@ -10,7 +10,7 @@ from .helpers.lensing import BaseLensing
 
 class BaseNFW(BaseLensing, Profile):
 
-    def __init__(self, mass, c, z, overdensity=200, background='c',
+    def __init__(self, mass, c, z, delta=200, background='c',
                  cosmo=Planck15, numeric_kwargs={}):
         assert background in 'cm', \
             "background must be either 'c' (critical) or 'm' (mean)"
@@ -22,10 +22,10 @@ class BaseNFW(BaseLensing, Profile):
         self._shape = self.mass.shape
         self.z = self._define_array(z)
         super().__init__(self.z, cosmo=cosmo, **numeric_kwargs)
-        self._background = background
-        self._concentration = self._define_array(c)
-        self._overdensity = overdensity
-        self._deltac = None
+        self.background = background
+        self.c = self._define_array(c)
+        self.delta = delta
+        self._delta_c = None
         self._rs = None
         self._radius = None
         self._sigma_s = None
@@ -33,23 +33,11 @@ class BaseNFW(BaseLensing, Profile):
     ### attributes ###
 
     @property
-    def background(self):
-        return self._background
-
-    @property
-    def c(self):
-        return self._concentration
-
-    @property
-    def deltac(self):
-        if self._deltac is None:
-            self._deltac = (self.overdensity * self.c**3 / 3) \
+    def delta_c(self):
+        if self._delta_c is None:
+            self._delta_c = (self.delta * self.c**3 / 3) \
                 / (np.log(1+self.c) - self.c/(1+self.c))
-        return self._deltac
-
-    @property
-    def overdensity(self):
-        return self._overdensity
+        return self._delta_c
 
     @property
     def rs(self):
@@ -61,13 +49,13 @@ class BaseNFW(BaseLensing, Profile):
     def radius(self):
         if self._radius is None:
             self._radius = \
-                (self.mass / (4*np.pi/3) / (self.overdensity*self.rho_bg))**(1/3)
+                (self.mass / (4*np.pi/3) / (self.delta*self.rho_bg))**(1/3)
         return self._radius
 
     @property
     def sigma_s(self):
         if self._sigma_s is None:
-            self._sigma_s = self.rs * self.deltac * self.rho_bg
+            self._sigma_s = self.rs * self.delta_c * self.rho_bg
         return self._sigma_s
 
 
@@ -99,7 +87,7 @@ class GNFW(BaseNFW):
     @array
     def density(self, r):
         exp = (self.beta-self.gamma) / self.alpha
-        return self.deltac * self.rho_bg \
+        return self.delta_c * self.rho_bg \
             / ((r/self.rs)**self.gamma * (1+(r/self.rs)**alpha)**exp)
 
 
@@ -117,13 +105,18 @@ class NFW(BaseNFW):
     def __init__(self, mass, c, z, **kwargs):
         super(NFW, self).__init__(mass, c, z, **kwargs)
 
+    def __str__(self):
+        label = f'NFW density profile\n  mass = {self.mass}\n' \
+                f'  c    = {self.c}\n  z    = {self.z}'
+        return label
+
     ### main methods ###
 
     @inMpc
     @array
     def density(self, r):
         """Three-dimensional density profile"""
-        return self.deltac * self.rho_bg / (r/self.rs * (1+r/self.rs)**2)
+        return self.delta_c * self.rho_bg / (r/self.rs * (1+r/self.rs)**2)
 
     @inMpc
     @array
@@ -163,6 +156,6 @@ class NFW(BaseNFW):
         ki = k * self.rs
         bs, bc = sici(ki)
         asi, ac = sici((1+self.c)*ki)
-        return 4 * np.pi * self.rho_bg * self.deltac * self.rs**3 / self.mass \
+        return 4 * np.pi * self.rho_bg * self.delta_c * self.rs**3 / self.mass \
             * (np.sin(ki)*(asi-bs) - (np.sin(self.c*ki) / ((1+self.c)*ki)) \
                + np.cos(ki)*(ac-bc))
