@@ -247,8 +247,67 @@ class Profile:
         g = g * dr * np.exp(1j*k[:,None]*rmax) / (2*np.pi)**0.5
         return k, g
 
-    # def twohalo(self, func, R, logm=np.logspace(12,16,41), **kwargs):
-    #     return
+    # def twohalo(self, cosmo, bias, func, R, logm=np.logspace(12,16,41),
+    #             bias_norm=1, **kwargs):
+    def twohalo(self, cosmo, offset_func, R, logm_2h=np.logspace(12,16,41),
+                z_2h=np.linspace(0,2,21), **kwargs):
+        """Calculate the two-halo term associated with the profile
+
+        Parameters
+        ----------
+        cosmo : `pyccl.Cosmology` object
+        offset_func : callable or str
+            if callable, it must be the offset version of the
+            function in question. For instance, if one is
+            modeling the convergence, the function supplied
+            must be the offset convergence.
+        R : np.ndarray
+        logm : np.ndarray, optional
+            masses over which to calculate the 2h term. If not
+            specified, the masses used when defining the profile will be used.
+
+        Notes
+        -----
+        kwargs are passed to the function to be called. If the function
+        to be calculated is the convergence, the source redshift must
+        be supplied
+        """
+        if not has_ccl:
+            msg = 'Core Cosmology Library (CCL) required for two halo' \
+                  ' calculations'
+            raise ModuleNotFoundError(msg)
+        assert isinstance(cosmo, ccl.Cosmology)
+        # assert isinstance(bias, ccl.halos.HaloBias)
+        # which function are we using?
+        _valid_funcs = ('esd', 'kappa', 'sigma', 'convergence',
+                        'excess_surface_density', 'surface_density')
+        if isinstance(offset_func, str):
+            assert offset_func in _valid_funcs, \
+                f'offset_func must be one of f{_valid_funcs}'
+            if offset_func in ('sigma', 'surface_density'):
+                offset_func = self.offset_surface_density
+            elif offset_func in ('esd', 'excess_surface_density'):
+                offset_func = self.offset_excess_surface_density
+            elif offset_func in ('kappa', 'convergence'):
+                offset_func = self.offset_convergence
+        else:
+            assert callable(offset_func), \
+                'argument offset_func must be a string or callable'
+            assert offset_func.__name__.startswith('offset'), \
+                'if argument offset_func is a function as opposed to' \
+                'a string, it must be the offset version of the' \
+                'function of interest.'
+        # for each distance Ri, calculate the contribution from
+        # all halos that will have some contribution at that distance
+        # In order to speed this up a little, consider I don't need
+        # to calculate the offset profile for all halos at all distances
+        # but only for those who are close enough to that distance
+        # So probably what I actually need to do is just calculate
+        # for a grid in Roff and then move that to the required distance.
+        # For example,
+        # for i, Ri in R:
+        #     twoh = offset_func(R, R[:i+1], **kwargs)
+        return
 
     ### auxiliary methods to test integration performance ###
 
