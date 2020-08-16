@@ -115,7 +115,15 @@ class BaseLensing(BaseCosmo):
             s = self.surface_density(R)
         else:
             s = self.offset_surface_density(R, Roff)
+        if zs is None:
+            zs = self.zs
         return s / self.sigma_crit(zs=zs, **kwargs)
+
+    def offset_convergence(self, R, Roff, zs=None, **kwargs):
+        if zs is None:
+            zs = self.zs
+        return self.offset_surface_density(R, Roff) \
+            / self.sigma_crit(zs=zs, **kwargs)
 
 
 class Lens(BaseCosmo):
