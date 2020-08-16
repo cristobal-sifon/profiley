@@ -10,7 +10,7 @@ from .helpers.lensing import BaseLensing
 
 class BaseNFW(BaseLensing, Profile):
 
-    def __init__(self, mass, c, z, delta=200, background='c',
+    def __init__(self, mass, c, z, overdensity=200, background='c',
                  cosmo=Planck15, numeric_kwargs={}):
         assert background in 'cm', \
             "background must be either 'c' (critical) or 'm' (mean)"
@@ -24,7 +24,7 @@ class BaseNFW(BaseLensing, Profile):
         super().__init__(self.z, cosmo=cosmo, **numeric_kwargs)
         self.background = background
         self.c = self._define_array(c)
-        self.delta = delta
+        self.overdensity = overdensity
         self._delta_c = None
         self._rs = None
         self._radius = None
@@ -35,7 +35,7 @@ class BaseNFW(BaseLensing, Profile):
     @property
     def delta_c(self):
         if self._delta_c is None:
-            self._delta_c = (self.delta * self.c**3 / 3) \
+            self._delta_c = (self.overdensity * self.c**3 / 3) \
                 / (np.log(1+self.c) - self.c/(1+self.c))
         return self._delta_c
 
@@ -49,7 +49,7 @@ class BaseNFW(BaseLensing, Profile):
     def radius(self):
         if self._radius is None:
             self._radius = \
-                (self.mass / (4*np.pi/3) / (self.delta*self.rho_bg))**(1/3)
+                (self.mass / (4*np.pi/3) / (self.overdensity*self.rho_bg))**(1/3)
         return self._radius
 
     @property
