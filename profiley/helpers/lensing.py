@@ -8,7 +8,7 @@ from .decorators import float_args
 
 class BaseLensing(BaseCosmo):
 
-    def __init__(self, z, zs=None, cosmo=Planck15):
+    def __init__(self, z, zs=None, cosmo=Planck15, frame='comoving'):
         """Base lensing calculations for Profile objects
 
         Parameters
@@ -37,7 +37,7 @@ class BaseLensing(BaseCosmo):
             except TypeError as e:
                 msg = 'argument `zs` must be a float or an array of floats'
                 raise TypeError(msg) from e
-        super().__init__(cosmo=cosmo)
+        super().__init__(cosmo=cosmo, frame=frame)
         self.z = z
         self._zs = zs
         self.cosmo = cosmo
@@ -101,12 +101,11 @@ class BaseLensing(BaseCosmo):
         return self.enclosed_surface_density(R) - self.surface_density(R)
 
     #@float_args
-    def sigma_crit(self, zs=None): #, frame='comoving'):
+    def sigma_crit(self, zs=None):
         """Critical surface density, in Msun/Mpc^2"""
-        #assert frame in ('comoving', 'physical','proper')
         A = self._c**2 / (4*np.pi*self._G)
-        #if frame == 'comoving':
-            #A = A / (1+self.z)**2
+        if self.frame == 'comoving':
+            A = A / (1+self.z)**2
         return A / (self.Dl*self.beta(zs=zs))
 
     #@float_args

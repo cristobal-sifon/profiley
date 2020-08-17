@@ -11,7 +11,7 @@ from .helpers.lensing import BaseLensing
 class BaseNFW(BaseLensing, Profile):
 
     def __init__(self, mass, c, z, overdensity=200, background='c',
-                 cosmo=Planck15, numeric_kwargs={}):
+                 cosmo=Planck15, frame='comoving', numeric_kwargs={}):
         assert background in 'cm', \
             "background must be either 'c' (critical) or 'm' (mean)"
         if isinstance(mass, u.Quantity):
@@ -21,9 +21,9 @@ class BaseNFW(BaseLensing, Profile):
         self.mass = mass
         self._shape = self.mass.shape
         self.z = self._define_array(z)
-        super().__init__(self.z, cosmo=cosmo, **numeric_kwargs)
-        self._background = background
-        self._concentration = self._define_array(c)
+        super().__init__(self.z, cosmo=cosmo, frame=frame, **numeric_kwargs)
+        self.background = background
+        self.c = self._define_array(c)
         self.overdensity = overdensity
         self._delta_c = None
         self._rs = None
@@ -31,14 +31,6 @@ class BaseNFW(BaseLensing, Profile):
         self._sigma_s = None
 
     ### attributes ###
-
-    @property
-    def background(self):
-        return self._background
-
-    @property
-    def c(self):
-        return self._concentration
 
     @property
     def delta_c(self):
