@@ -214,17 +214,6 @@ class Profile:
         offset_surface_density : np.ndarray
             offset surface density
         """
-        # if not np.iterable(Roff):
-        #     Roff = np.array([Roff])
-        # assert len(Roff.shape) == 1, 'Roff must be 1d'
-        # Roff = Roff[:,None,None,None]
-        # theta = np.linspace(0, 2*np.pi, 500)[:,None,None]
-        # x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta))**0.5
-        # # looping slower but avoids memory issues
-        # sd_off = np.array(
-        #     [simps(self.surface_density(xi, **kwargs), theta, axis=0)
-        #      for xi in x])
-        # return sd_off / (2*np.pi)
         return self.offset(self.surface_density, R, Roff, **kwargs)
 
     def offset_enclosed_surface_density(self, R, Roff, **kwargs):
