@@ -31,7 +31,7 @@ def read(fname):
     if os.path.isfile(fname):
         return open(fname).read()
 
-print('packages =', find_packages())
+
 setup(
     name='profiley',
     version=find_version('profiley/__init__.py'),

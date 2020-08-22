@@ -184,31 +184,40 @@ def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='m',
     return
 
 
-def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2):
+def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2, full_output=False):
     """Calculate the surface density from the correlation function
 
     Parameters
     ----------
-    R : np.ndarray, shape ([M,[P,]]N
+    R : np.ndarray, shape ([M,[P,]]N)
         projected distances at which to calculate the surface density,
         in Mpc. Can have up to two additional dimensions (typically
         mass and redshift)
     r_xi : np.ndarray, shape ([M,P,]Q)
         radii at which the correlation function has been calculated.
-        Can have up to two additional dimensions (say, mass and redshift)
+        Can have up to two additional dimensions (say, mass and
+        redshift)
     xi : np.ndarray, shape ([M,P,]Q)
         correlation function, calculated at radii `r_xi`. Can have up
-        to two additional dimensions (say, mass and redshift)
+        to two additional dimensions (say, mass and redshift). Note
+        that it is assumed that at least one of these additional
+        dimensions is indeed present
     threads : int, optional
         number of threads to calculate the surface densities in
         parallel
     verbose : {0,1,2}
         verbosity. 0 is quiet, 2 is full verbose
+    full_output : bool, optional
+        if ``True``, return the radii as well as the surface density,
+        both with the same shapes
 
     Returns
     -------
     sigma : np.ndarray, shape ([M,P,]N)
         surface density calculated at projected radii R
+    R : np.ndarray, shape ([M,P],N)
+        array of radii with the same shape as ``sigma``. Returned only
+        if ``full_output==True``
 
     Notes
     -----
@@ -222,7 +231,8 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2):
       this function.
     * <Note on the shape of r_xi>
     """
-    # reshape r_xi and xi to 2-dimensional if necessary
+    # we need to know the original shapes as we reshape these
+    R_shape = R.shape
     r_xi_shape = r_xi.shape
     xi_shape = xi.shape
     n = np.prod(xi_shape[:-1])
@@ -244,28 +254,24 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2):
     # to go through it. We reshape as appropriate at the end.
     if verbose == 2:
         print('Internally rearranging input data...')
+    # it's a little more complicated if they have 2 dimensions
+    if len(R.shape) == 1:
+        R = np.array([R for i in range(n)])
+    if len(r_xi_shape) == 1:
+        r_xi = np.array([r_xi for i in range(n)])
+    # do those cases in here
     if len(xi_shape) == 3:
         xi = np.vstack(xi)
-        # arrange r_xi to match xi.shape
-        if len(r_xi_shape) == 1:
-            r_xi = np.array(
-                [[r_xi for j in range(xi_shape[1])]
-                 for i in range(xi_shape[0])])
-        elif len(r_xi_shape) == 2:
+        # arrange r_xi to match xi's shape
+        if len(r_xi_shape) == 2:
             r_xi = np.array([r_xi for i in range(xi_shape[0])])
-        r_xi = np.vstack(r_xi)
+            r_xi = np.vstack(r_xi)
         # arrange R
-        if len(R.shape) == 1:
-            R = np.array([R for i in range(n)])
-        elif R.shape[0] == xi_shape[0]:
-            R = np.vstack([[Ri for i in range(xi_shape[1])] for Ri in R])
-        else:
-            R = np.vstack([[Ri for Ri in R] for i in range(xi_shape[0])])
-    elif len(xi_shape) == 2:
-        if len(r_xi_shape) == 1:
-            r_xi = np.array([r_xi for i in range(xi_shape[0])])
-        if len(R.shape) == 1:
-            R = np.array([Ri for i in range(xi_shape[0])])
+        if len(R_shape) == 2:
+            if R.shape[0] == xi_shape[0]:
+                R = np.vstack([[Ri for i in range(xi_shape[1])] for Ri in R])
+            else:
+                R = np.vstack([[Ri for Ri in R] for i in range(xi_shape[0])])
     # OK done with the massaging
     ln_rxi = np.log(r_xi)
     ln_1plusxi = np.log(1+xi)
@@ -306,10 +312,13 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2):
     if len(output_shape) == 3:
         sigma = sigma.reshape(output_shape)
         R = R.reshape(output_shape)
-    return 2 * rho_m * R * sigma, R
+    sigma = 2 * rho_m * R * sigma
+    if full_output:
+        return sigma, R
+    return R
 
 
-def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=0):
+def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=True):
     """Auxiliary function to calculate the surface density from
     the correlation function for a single profile
 
