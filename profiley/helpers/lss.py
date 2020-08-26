@@ -72,9 +72,12 @@ def load_profiles(filename, x=None, precision=2, force_match_all=True):
       -1, this function will raise an exception.
     """
     with open(filename) as f:
-        while f.readline().strip()[0] == '#':
+        # in python 3.8 I can do `while (hdr := f.readline().strip()) == '#':`
+        hdr = f.readline().strip()
+        while hdr[0] == '#':
+            hdr = f.readline().strip()
             continue
-        ncols = (np.array(f.readline().split()) == -1).sum()
+        ncols = np.isin(hdr.split(), '-1').sum()
     cols = np.loadtxt(filename, unpack=True)[:ncols,1:]
     values = [np.unique(c) for c in cols]
     # for now
@@ -101,6 +104,10 @@ def load_profiles(filename, x=None, precision=2, force_match_all=True):
     profiles = profiles[1:]
     profiles = np.transpose(
         np.reshape(profiles, (x2.size,x1.size,r.size)), axes=(1,0,2))
+    if x is not None:
+        x1 = x1[isin[0]]
+        x2 = x2[isin[1]]
+        profiles = profiles[isin[0],isin[1]]
     # load information from the comments
     with open(filename) as file:
         _, xlabel, ylabel, label = file.readline().split()
@@ -111,7 +118,6 @@ def load_profiles(filename, x=None, precision=2, force_match_all=True):
         else:
             cosmo = np.transpose(
                 [param.split('=') for param in cosmo.split()[1:]])
-            print(cosmo)
             cosmo = {key: float(val) for key, val in zip(*cosmo)}
     info = (label, runit, xlabel, ylabel, cosmo)
     return profiles, r, x1, x2, info
@@ -225,7 +231,7 @@ def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
     return
 
 
-def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2):
+def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
     """Calculate the surface density from the correlation function
 
     Parameters
@@ -243,13 +249,19 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2):
     threads : int, optional
         number of threads to calculate the surface densities in
         parallel
+    full_output : bool, optional
+        whether to return the radial coordinates as well as the
+        surface density (default False)
     verbose : {0,1,2}
         verbosity. 0 is quiet, 2 is full verbose
 
     Returns
     -------
-    sigma : np.ndarray, shape ([M,P,]N)
+    sigma : np.ndarray, shape ([M,[P,]]N)
         surface density calculated at projected radii R
+    Rsigma : np.ndarray, shape ([M,[P,]]N)
+        radial coordinate reshaped to have the same shape as ``sigma``.
+        Returned only if ``full_output==True``
 
     Notes
     -----
@@ -342,12 +354,15 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2):
         """
     if verbose:
         t = time() - to
-        print(f'Calculated {n} surface densities in {t/60:.2f},' \
+        print(f'Calculated {n} surface densities in {t/60:.2f} min,' \
               f' for an average time of {t/n:.2f} sec per call.')
     if len(output_shape) == 3:
         sigma = sigma.reshape(output_shape)
         R = R.reshape(output_shape)
-    return 2 * rho_m * R * sigma, R
+    sigma = 2 * rho_m * R * sigma
+    if full_output:
+        return sigma, R
+    return sigma
 
 
 def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=0):
