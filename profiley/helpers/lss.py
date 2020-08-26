@@ -7,7 +7,6 @@ import pyccl as ccl
 from scipy.integrate import quad, IntegrationWarning
 from scipy.interpolate import UnivariateSpline
 from time import time
-from tqdm import tqdm
 import warnings
 
 from . import hankel
@@ -25,7 +24,7 @@ class ProfilesFile:
 """
 
 
-def load_profiles(filename, output_R_unit='Mpc'):
+def load_profiles(filename, x=None, precision=2, force_match_all=True):
     """Load profiles created by ``save_profiles``
 
     Parameters
@@ -34,6 +33,17 @@ def load_profiles(filename, output_R_unit='Mpc'):
         name of the file to be read. To ensure consistency, this file
         should have been created with ``save_profiles``; this is
         assumed but not checked
+    x : iterable, optional
+        quantities for which the profiles are needed. Each dimension
+        must correspond to the columns storing the variables in the
+        file (e.g., z and logm).
+        Each column in ``x`` must be a unique array.
+    precision : int or list of 2 ints, optional
+        number of decimal places with which to match ``x`` to the
+        columns read from the file.
+    force_match_all : bool, optional
+        whether if ``x is defined``, all values of x *must* be present
+        in the file, otherwise a ``ValueError`` is raised.
 
     Returns
     -------
@@ -50,11 +60,42 @@ def load_profiles(filename, output_R_unit='Mpc'):
             -name of x1
             -name of x2
             -dictionary of cosmological parameters, or None
+
+    Raises
+    ------
+    ValueError: if ``x`` is not composed of unique arrays
+
+    Notes
+    -----
+    - It is assumed but not check that the radial coordinates make sense.
+      In particular, if any value in the radial coordinate is equal to
+      -1, this function will raise an exception.
     """
-    x1, x2 = np.loadtxt(filename, unpack=True)[:2,1:]
-    x1 = np.unique(x1)
-    x2 = np.unique(x2)
-    profiles = np.loadtxt(filename)[:,2:]
+    with open(filename) as f:
+        while f.readline().strip()[0] == '#':
+            continue
+        ncols = (np.array(f.readline().split()) == -1).sum()
+    cols = np.loadtxt(filename, unpack=True)[:ncols,1:]
+    values = [np.unique(c) for c in cols]
+    # for now
+    x1, x2 = values
+    # check whether we need to match values
+    if x is not None:
+        if not np.all([np.unique(xi).size == xi.size]):
+            raise ValueError('Not all columns of x are unique')
+        isin = [[]] * ncols
+        for i in range(ncols):
+            if not np.iterable(precision):
+                precision = [precision] * len(x)
+            isin[i] = np.isin(
+                np.round(x[i], precision[i]),
+                np.round(values[i], precision[i]))
+            if force_match_all and isin.sum() != x[i].size:
+                raise ValueError(
+                    f'Not all values found in column #{i}:' \
+                    f'found {values[i]}, expected {x[i]}')
+    # load profiles, excluding already-loaded columns
+    profiles = np.loadtxt(filename)[:,ncols:]
     # first line contains radial coordinates
     r = profiles[0]
     profiles = profiles[1:]
@@ -111,7 +152,7 @@ def power2xi(lnPgm_lnk, R):
             #xi[i,j] = lss.power2xi(lnPgm_lnk, Rxi)
 
 
-def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='m',
+def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
                   label='profile', R_units='Mpc',
                   cosmo_params=None, verbose=True):
     """Save 2d grid of profiles into file
