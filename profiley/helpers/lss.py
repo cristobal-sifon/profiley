@@ -160,7 +160,7 @@ def power2xi(lnPgm_lnk, R):
 
 def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
                   label='profile', R_units='Mpc',
-                  cosmo_params=None, verbose=True):
+                  cosmo_params=None, format='ascii', verbose=True):
     """Save 2d grid of profiles into file
 
     Parameters
@@ -183,6 +183,8 @@ def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
     cosmo : dict, optional
         cosmological parameters used to calculate the profiles,
         annotated as a comment
+    format : {'ascii', 'npy'}, optional. NOT IMPLEMENTED
+        whether to save the file as plain ascii or .npy format
     verbose : bool, optional
         verbosity. If ``True`` will only print the filename
         when finished.
@@ -206,6 +208,11 @@ def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
     assert profiles.shape == (x.size,y.size,R.size), \
         'shape of profiles inconsistent, must be (x.size,y.size,R.size)' \
         f'=({x.size},{y.size},{R.size}); received instead {profiles.shape}'
+    #assert format in ('txt', 'npy'), 'format must be one of ("txt","npy")'
+    if format != 'ascii':
+        warnings.warn(
+            'Only `format=="ascii"` implemented. Falling back to it.')
+    format = 'ascii'
     if os.path.isfile(file):
         warnings.warn(f'Saving backup of existing file at {file}.backup')
         os.system(f'cp -p {file} {file}.backup')
