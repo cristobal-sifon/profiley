@@ -7,7 +7,6 @@ import pyccl as ccl
 from scipy.integrate import quad, IntegrationWarning
 from scipy.interpolate import UnivariateSpline
 from time import time
-from tqdm import tqdm
 import warnings
 
 from . import hankel
@@ -25,7 +24,7 @@ class ProfilesFile:
 """
 
 
-def load_profiles(filename, output_R_unit='Mpc'):
+def load_profiles(filename, x=None, precision=2, force_match_all=True):
     """Load profiles created by ``save_profiles``
 
     Parameters
@@ -34,6 +33,17 @@ def load_profiles(filename, output_R_unit='Mpc'):
         name of the file to be read. To ensure consistency, this file
         should have been created with ``save_profiles``; this is
         assumed but not checked
+    x : iterable, optional
+        quantities for which the profiles are needed. Each dimension
+        must correspond to the columns storing the variables in the
+        file (e.g., z and logm).
+        Each column in ``x`` must be a unique array.
+    precision : int or list of 2 ints, optional
+        number of decimal places with which to match ``x`` to the
+        columns read from the file.
+    force_match_all : bool, optional
+        whether if ``x is defined``, all values of x *must* be present
+        in the file, otherwise a ``ValueError`` is raised.
 
     Returns
     -------
@@ -50,16 +60,54 @@ def load_profiles(filename, output_R_unit='Mpc'):
             -name of x1
             -name of x2
             -dictionary of cosmological parameters, or None
+
+    Raises
+    ------
+    ValueError: if ``x`` is not composed of unique arrays
+
+    Notes
+    -----
+    - It is assumed but not check that the radial coordinates make sense.
+      In particular, if any value in the radial coordinate is equal to
+      -1, this function will raise an exception.
     """
-    x1, x2 = np.loadtxt(filename, unpack=True)[:2,1:]
-    x1 = np.unique(x1)
-    x2 = np.unique(x2)
-    profiles = np.loadtxt(filename)[:,2:]
+    with open(filename) as f:
+        # in python 3.8 I can do `while (hdr := f.readline().strip()) == '#':`
+        hdr = f.readline().strip()
+        while hdr[0] == '#':
+            hdr = f.readline().strip()
+            continue
+        ncols = np.isin(hdr.split(), '-1').sum()
+    cols = np.loadtxt(filename, unpack=True)[:ncols,1:]
+    values = [np.unique(c) for c in cols]
+    # for now
+    x1, x2 = values
+    # check whether we need to match values
+    if x is not None:
+        if not np.all([np.unique(xi).size == xi.size]):
+            raise ValueError('Not all columns of x are unique')
+        isin = [[]] * ncols
+        for i in range(ncols):
+            if not np.iterable(precision):
+                precision = [precision] * len(x)
+            isin[i] = np.isin(
+                np.round(x[i], precision[i]),
+                np.round(values[i], precision[i]))
+            if force_match_all and isin.sum() != x[i].size:
+                raise ValueError(
+                    f'Not all values found in column #{i}:' \
+                    f'found {values[i]}, expected {x[i]}')
+    # load profiles, excluding already-loaded columns
+    profiles = np.loadtxt(filename)[:,ncols:]
     # first line contains radial coordinates
     r = profiles[0]
     profiles = profiles[1:]
     profiles = np.transpose(
         np.reshape(profiles, (x2.size,x1.size,r.size)), axes=(1,0,2))
+    if x is not None:
+        x1 = x1[isin[0]]
+        x2 = x2[isin[1]]
+        profiles = profiles[isin[0],isin[1]]
     # load information from the comments
     with open(filename) as file:
         _, xlabel, ylabel, label = file.readline().split()
@@ -70,7 +118,6 @@ def load_profiles(filename, output_R_unit='Mpc'):
         else:
             cosmo = np.transpose(
                 [param.split('=') for param in cosmo.split()[1:]])
-            print(cosmo)
             cosmo = {key: float(val) for key, val in zip(*cosmo)}
     info = (label, runit, xlabel, ylabel, cosmo)
     return profiles, r, x1, x2, info
@@ -111,7 +158,7 @@ def power2xi(lnPgm_lnk, R):
             #xi[i,j] = lss.power2xi(lnPgm_lnk, Rxi)
 
 
-def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='m',
+def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
                   label='profile', R_units='Mpc',
                   cosmo_params=None, verbose=True):
     """Save 2d grid of profiles into file
@@ -184,7 +231,7 @@ def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='m',
     return
 
 
-def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2, full_output=False):
+def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
     """Calculate the surface density from the correlation function
 
     Parameters
@@ -205,19 +252,22 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2, full_output=False):
     threads : int, optional
         number of threads to calculate the surface densities in
         parallel
-    verbose : {0,1,2}
-        verbosity. 0 is quiet, 2 is full verbose
+    full_output : bool, optional
+        whether to return the radial coordinates as well as the
+        surface density (default False)
     full_output : bool, optional
         if ``True``, return the radii as well as the surface density,
         both with the same shapes
+    verbose : {0,1,2}
+        verbosity. 0 is quiet, 2 is full verbose
 
     Returns
     -------
-    sigma : np.ndarray, shape ([M,P,]N)
+    sigma : np.ndarray, shape ([M,[P,]]N)
         surface density calculated at projected radii R
-    R : np.ndarray, shape ([M,P],N)
-        array of radii with the same shape as ``sigma``. Returned only
-        if ``full_output==True``
+    Rsigma : np.ndarray, shape ([M,[P,]]N)
+        radial coordinate reshaped to have the same shape as ``sigma``.
+        Returned only if ``full_output==True``
 
     Notes
     -----
@@ -229,7 +279,7 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2, full_output=False):
       track of progress it is advised to call this function for
       pieces of your data and do the progress printing when calling
       this function.
-    * <Note on the shape of r_xi>
+
     """
     # we need to know the original shapes as we reshape these
     R_shape = R.shape
@@ -282,9 +332,6 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2, full_output=False):
     if threads == 1:
         sigma = np.array(
             [_xi2sig_single(*args) for args in zip(R, ln_rxi, ln_1plusxi)])
-        #if len(xi_shape) == 3:
-            # probably need to transpose this to get it right!
-            #sigma = sigma.reshape(output_shape)
     # run in parallel
     else:
         pool = mp.Pool(threads)
@@ -299,15 +346,9 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2, full_output=False):
         for i, x in enumerate(out):
             sigma_j, j = x.get()
             sigma[j] = sigma_j
-        """
-            if i % (n//20) == 0:
-                print('{0:.2f}% done after {1:.2f} min ...\r'.format(
-                    100*i/n, (time()-ti)/60), end='')
-        print()
-        """
     if verbose:
         t = time() - to
-        print(f'Calculated {n} surface densities in {t/60:.2f},' \
+        print(f'Calculated {n} surface densities in {t/60:.2f} min,' \
               f' for an average time of {t/n:.2f} sec per call.')
     if len(output_shape) == 3:
         sigma = sigma.reshape(output_shape)
@@ -315,7 +356,7 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, verbose=2, full_output=False):
     sigma = 2 * rho_m * R * sigma
     if full_output:
         return sigma, R
-    return R
+    return sigma
 
 
 def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=True):
