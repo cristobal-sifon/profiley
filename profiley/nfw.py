@@ -66,7 +66,7 @@ class BaseNFW(BaseLensing, Profile):
             raise ValueError(msg)
 
     def _f_delta_c(self, c, overdensity):
-        return self.overdensity*c**3/3 / (np.log(1+c) - c/(1+c))
+        return (overdensity*c**3/3) / (np.log(1+c) - c/(1+c))
 
     ### methods ###
 
