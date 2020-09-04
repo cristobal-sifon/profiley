@@ -6,14 +6,14 @@ from scipy.special import sici
 from .core import Profile
 from .helpers.decorators import array, inMpc
 from .helpers.lensing import BaseLensing
+from .helpers.spherical import mass_from_radius, radius_from_mass
 
 
 class BaseNFW(BaseLensing, Profile):
 
     def __init__(self, mass, c, z, overdensity=200, background='c',
                  cosmo=Planck15, frame='comoving', numeric_kwargs={}):
-        assert background in 'cm', \
-            "background must be either 'c' (critical) or 'm' (mean)"
+        self._assert_background(background)
         if isinstance(mass, u.Quantity):
             mass = mass.to(u.Msun).value
         if not np.iterable(mass):
@@ -35,10 +35,8 @@ class BaseNFW(BaseLensing, Profile):
     @property
     def delta_c(self):
         if self._delta_c is None:
-            self._delta_c = (self.overdensity * self.c**3 / 3) \
-                / (np.log(1+self.c) - self.c/(1+self.c))
+            self._delta_c = self._f_delta_c(self.c, self.overdensity)
         return self._delta_c
-
 
     @property
     def rs(self):
@@ -49,8 +47,8 @@ class BaseNFW(BaseLensing, Profile):
     @property
     def radius(self):
         if self._radius is None:
-            self._radius = \
-                (self.mass / (4*np.pi/3) / (self.overdensity*self.rho_bg))**(1/3)
+            self._radius = radius_from_mass(
+                self.mass, self.overdensity, self.rho_bg)
         return self._radius
 
     @property
@@ -58,6 +56,35 @@ class BaseNFW(BaseLensing, Profile):
         if self._sigma_s is None:
             self._sigma_s = self.rs * self.delta_c * self.rho_bg
         return self._sigma_s
+
+    ### hidden methods ###
+
+    def _assert_background(self, background):
+        if background not in 'cm':
+            msg = "background must be either 'c' (critical) or 'm' (mean);" \
+                  f' received {background}'
+            raise ValueError(msg)
+
+    def _f_delta_c(self, c, overdensity):
+        return self.overdensity*c**3/3 / (np.log(1+c) - c/(1+c))
+
+    ### methods ###
+
+    """
+    def mdelta(self, overdensity, background='c'):
+        """Calculate mass at any overdensity from the original mass
+        definition"""
+        if overdensity == self.overdensity \
+                and background == self.background:
+            return self.mass
+        c_guess = (self.overdensity/overdensity)**0.5 * self.c
+        if overdensity > self.overdensity:
+            c_rng = np.linspace(0.5*c_guess, c_guess, 100)
+        else:
+            c_rng = np.linspace(c_guess, 1.5*c_guess, 100)
+        delta_c_rng = self._f_delta_c(c_rng, overdensity)
+        delta_c_diff = np.abs(delta_c_rng - np.expand_dims(self.delta_c, -1))
+    """
 
 
 class GNFW(BaseNFW):
