@@ -70,7 +70,7 @@ class BaseNFW(BaseLensing, Profile):
 
     ### methods ###
 
-    """
+    '''
     def mdelta(self, overdensity, background='c'):
         """Calculate mass at any overdensity from the original mass
         definition"""
@@ -84,7 +84,7 @@ class BaseNFW(BaseLensing, Profile):
             c_rng = np.linspace(c_guess, 1.5*c_guess, 100)
         delta_c_rng = self._f_delta_c(c_rng, overdensity)
         delta_c_diff = np.abs(delta_c_rng - np.expand_dims(self.delta_c, -1))
-    """
+    '''
 
 
 class GNFW(BaseNFW):
