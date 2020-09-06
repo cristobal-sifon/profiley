@@ -21,8 +21,7 @@ from .helpers.decorators import array, inMpc
 from .helpers.lensing import BaseLensing
 
 
-#class Profile(BaseCosmo):
-class Profile:
+class Profile(BaseLensing):
 
     """Profile object
 
@@ -73,8 +72,8 @@ class Profile:
 
     """
 
-    def __init__(self, los_loglimit=6, Rlos=200, resampling=20,
-                 logleft=-10, left_samples=100):
+    def __init__(self, z=0, los_loglimit=6, Rlos=200, resampling=20,
+                 logleft=-10, left_samples=100, **kwargs):
         """Initialize a profile object
 
         Optional parameters for numerical integration
@@ -114,7 +113,7 @@ class Profile:
         `quad` (which is more accurate but a lot slower than the
         currently used `simps` integration).
         """
-        #super().__init__(cosmo=cosmo)
+        super().__init__(z, **kwargs)
         # for numerical integration -- perhaps these could be passed
         # in a single dictionary
         self.los_loglimit = los_loglimit
@@ -122,16 +121,20 @@ class Profile:
         self.resampling = resampling
         self.logleft = logleft
         self.left_samples = left_samples
-        # aliases
-        self.barsigma = self.enclosed_surface_density
-        self.esd = self.excess_surface_density
-        self.sigma = self.surface_density
+        # empty init
+        self.__dimensions = None
 
     @property
     def _one(self):
         if self.__one is None:
             self.__one = u.dimensionless_unscaled
         return self.__one
+
+    @property
+    def _dimensions(self):
+        if self.__dimensions is None:
+            self.__dimensions = tuple([1] * len(self.shape))
+        return self.__dimensions
 
     @property
     def shape(self):
@@ -198,9 +201,11 @@ class Profile:
         # resample R
         Ro = np.vstack([
             np.zeros(R.shape[1]),
-            np.logspace(-10, logR[0], self.left_samples, endpoint=False)[:,None],
+            np.logspace(-10, logR[0], self.left_samples,
+                        endpoint=False)[:,None],
             np.concatenate(
-                [np.logspace(logR[i-1], logR[i], self.resampling, endpoint=False)
+                [np.logspace(logR[i-1], logR[i], self.resampling,
+                             endpoint=False)
                  for i in range(1, R.shape[0])])[:,None],
             R.max()*np.ones(R.shape[1])
             ])
@@ -253,12 +258,18 @@ class Profile:
         """
         if not np.iterable(Roff):
             Roff = np.array([Roff])
-        assert len(Roff.shape) == 1, 'Roff must be 1d'
-        Roff = Roff[:,None,None,None]
-        theta = np.linspace(0, 2*np.pi, 500)[:,None,None]
-        x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta))**0.5
+        assert len(Roff.shape) == 1, 'argument Roff must be 1d'
+        # can't get this to work using the @array decorator
+        R = R.reshape((R.size,*self._dimensions))
+        Roff = Roff.reshape((Roff.size,*self._dimensions,1,1))
+        theta = np.linspace(0, 2*np.pi, 500)
+        theta1 = theta.reshape((500,*self._dimensions,1))
+        x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta1))**0.5
+        print('x =', x.shape)
+        print('func =', func(x[0], **kwargs).shape)
         # looping slower but avoids memory issues
-        off = np.array([simps(func(xi, **kwargs), theta, axis=0) for xi in x])
+        off = np.array([simps(func(xi, **kwargs), theta, axis=0)
+                        for xi in x])
         return off / (2*np.pi)
 
     def offset_density(self, R, Roff):

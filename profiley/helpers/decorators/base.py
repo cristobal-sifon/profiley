@@ -3,15 +3,23 @@ from functools import wraps
 import numpy as np
 
 
-def array(f):
+def array(f, idx=1):
     """Turn the first argument (assumed to be `R`) into a 2-d array
     to allow multiple profiles to be defined in one call
     """
     @wraps(f)
     def decorated(*args, **kwargs):
         args = list(args)
-        if len(args[1].shape) == 1:
+        # args[0] is self
+        shape = getattr(args[0], 'shape')
+        while len(args[1].shape) <= len(shape):
             args[1] = np.expand_dims(args[1], -1)
+        """
+        dims = getattr(args[0], '_dimensions')
+        if not np.iterable(args[idx]):
+            args[idx] = np.array([args[idx]])
+        args[idx] = np.reshape(args[idx], (args[idx].size,*dims))
+        """
         return f(*args, **kwargs)
     return decorated
 

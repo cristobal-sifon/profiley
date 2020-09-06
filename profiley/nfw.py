@@ -9,7 +9,7 @@ from .helpers.lensing import BaseLensing
 from .helpers.spherical import mass_from_radius, radius_from_mass
 
 
-class BaseNFW(BaseLensing, Profile):
+class BaseNFW(Profile):
 
     def __init__(self, mass, c, z, overdensity=200, background='c',
                  cosmo=Planck15, frame='comoving', numeric_kwargs={}):
@@ -21,15 +21,15 @@ class BaseNFW(BaseLensing, Profile):
         self._set_shape(mass*c*z)
         self.mass = mass
         self.c = c
-        self.z = z
         self.background = background
         self.overdensity = overdensity
-        super().__init__(self.z, cosmo=cosmo, frame=frame, **numeric_kwargs)
         # additional NFW convenience attributes
         self._delta_c = None
         self._rs = None
         self._radius = None
         self._sigma_s = None
+        super().__init__(
+            z, cosmo=cosmo, frame=frame, **numeric_kwargs)
 
     ### attributes ###
 
