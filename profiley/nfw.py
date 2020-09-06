@@ -18,13 +18,14 @@ class BaseNFW(BaseLensing, Profile):
             mass = mass.to(u.Msun).value
         if not np.iterable(mass):
             mass = np.array([mass])
+        self._set_shape(mass*c*z)
         self.mass = mass
-        self._shape = self.mass.shape
-        self.z = self._define_array(z)
-        super().__init__(self.z, cosmo=cosmo, frame=frame, **numeric_kwargs)
+        self.c = c
+        self.z = z
         self.background = background
-        self.c = self._define_array(c)
         self.overdensity = overdensity
+        super().__init__(self.z, cosmo=cosmo, frame=frame, **numeric_kwargs)
+        # additional NFW convenience attributes
         self._delta_c = None
         self._rs = None
         self._radius = None
@@ -149,11 +150,13 @@ class NFW(BaseNFW):
         s = np.ones_like(x) / 3
         s[x == 0] = 0
         j = (x > 0) & (x < 1)
-        s[j] = (1 - 2*np.arctanh(((1-x[j]) / (1+x[j]))**0.5) / (1 - x[j]**2)**0.5) \
-            / (x[j]**2 - 1)
+        s[j] = (1 - 2*np.arctanh(((1-x[j]) / (1+x[j]))**0.5)
+                     / (1-x[j]**2)**0.5) \
+               / (x[j]**2 - 1)
         j = x > 1
-        s[j] = (1 - 2*np.arctan(((x[j]-1) / (1+x[j]))**0.5) / (x[j]**2 - 1)**0.5) \
-            / (x[j]**2 - 1)
+        s[j] = (1 - 2*np.arctan(((x[j]-1) / (1+x[j]))**0.5) \
+                    / (x[j]**2-1)**0.5) \
+               / (x[j]**2 - 1)
         return 2 * self.sigma_s * s
 
     @inMpc

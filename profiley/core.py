@@ -24,6 +24,55 @@ from .helpers.lensing import BaseLensing
 #class Profile(BaseCosmo):
 class Profile:
 
+    """Profile object
+
+    All profiles should inherit from ``Profile``
+
+    Defining your own profile is very simple. As an example, let's
+    define a simple power-law profile with two free parameters, the
+    normalization and the slope:
+
+    .. math::
+
+        f(r, a, b) = a * r**b
+
+    ::
+
+        class PowerLaw(Profile):
+
+            def __init__(self, norm, slope, **kwargs):
+                super().__init__(**kwargs)
+                self.norm = norm
+                self.slope = slope
+                self._set_shape(norm*slope)
+
+            @array
+            def profile3d(self, r):
+                return self.norm * r**self.slope
+
+    That's it! The ``__init__()`` method needs only two lines of code
+    (in addition to attribute definitions). The last line is necessary
+    to allow ``profiley`` to automatically handle arbitrary shapes,
+    through the definition of a ``_shape`` attribute. Note that
+    ``set_shape`` takes only one argument (besides ``self``) - the
+    *product* of the class arguments. That is, if the arguments are
+    arrays, their dimensions must be such that a product can be carried
+    out without any manipulation.
+
+
+    If the projection of this profile is analytical, any or all of the
+    following methods can also be specified: ::
+
+        surface_density(self, R)
+        enclosed_surface_density(self, R)
+        excess_surface_density(self, R)
+        offset_profile3d(self, R, Roff)
+        offset_surface_density(self, R, Roff)
+        offset_enclosed_surface_density(self, R, Roff)
+        offset_excess_surface_density
+
+    """
+
     def __init__(self, los_loglimit=6, Rlos=200, resampling=20,
                  logleft=-10, left_samples=100):
         """Initialize a profile object
@@ -84,12 +133,29 @@ class Profile:
             self.__one = u.dimensionless_unscaled
         return self.__one
 
+    @property
+    def shape(self):
+        if not hasattr(self, '_shape'):
+            msg = 'attribute shape does not exist. Please make sure' \
+                  ' to call ``self._set_shape`` in ``__init__``'
+            raise AttributeError(msg)
+        return self._shape
+
     ### private methods ###
 
     def _define_array(self, x):
         if not np.iterable(x):
             return x * np.ones(self._shape)
         return x
+
+    def _set_shape(self, args_product):
+        if hasattr(self, 'shape'):
+            msg = 'attribute shape already set, cannot be overwritten'
+            raise ValueError(msg)
+        if np.iterable(args_product):
+            self._shape = args_product.shape
+        else:
+            self._shape = (1,)
 
     ### methods ###
 
