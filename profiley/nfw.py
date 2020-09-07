@@ -2,6 +2,7 @@ from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
 from scipy.special import sici
+import warnings
 
 from .core import Profile
 from .helpers.decorators import array, inMpc
@@ -71,21 +72,85 @@ class BaseNFW(Profile):
 
     ### methods ###
 
-    '''
-    def mdelta(self, overdensity, background='c'):
+    def mdelta(self, overdensity, background='c', err=1e-3, n_guess_rng=1000,
+               max_iter=10):
         """Calculate mass at any overdensity from the original mass
-        definition"""
+        definition
+
+        Parameters
+        ----------
+        overdensity : float
+            overdensity at which the mass should be calculated
+        background : one of ('c','m'), optional
+            background density as a reference for ``overdensity``.
+            WARNING: currently only the same background as used in
+            defining this object is implemented
+        err: float, optional
+            maximum error on ``delta_c`` that can be tolerated to claim
+            convergence
+        n_guess_rng : int, optional
+            how many samples of ``c`` to obtain in each iteration. See
+            Notes below.
+        max_iter : int, optional
+            maximum number of iterations
+
+        Returns
+        -------
+        mdelta, cdelta : ndarray
+            mass and concentrations calculated at the requested
+            overdensity
+        """
         if overdensity == self.overdensity \
                 and background == self.background:
             return self.mass
+        if background != self.background:
+            msg = 'converting masses with different background definitions' \
+                  ' not yet implemented'
+            raise NotImplementedError(msg)
+        # I found that this guess is good to within 20% typically
         c_guess = (self.overdensity/overdensity)**0.5 * self.c
-        if overdensity > self.overdensity:
-            c_rng = np.linspace(0.5*c_guess, c_guess, 100)
-        else:
-            c_rng = np.linspace(c_guess, 1.5*c_guess, 100)
+        c_rng = np.linspace(0.5*c_guess, 1.5*c_guess, n_guess_rng)
         delta_c_rng = self._f_delta_c(c_rng, overdensity)
-        delta_c_diff = np.abs(delta_c_rng - np.expand_dims(self.delta_c, -1))
-    '''
+        delta_c_diff = np.abs(delta_c_rng/self.delta_c - 1)
+        argmins = np.argmin(delta_c_diff, axis=0)
+        # this works only for 2d :/
+        # without the copy I am not allowed to write into this array
+        cdelta = np.diagonal(c_rng[argmins], axis1=-2, axis2=-1).copy()
+        # delta_c_err are the minima of delta_c_diff
+        delta_c_err = np.diagonal(
+            delta_c_diff[argmins], axis1=-2, axis2=-1).copy()
+        i = 0
+        while np.any(delta_c_err > err):
+            k = (delta_c_err > err)
+            # if our best guess is at the edge then we don't want to
+            # shrink the search range, but if we don't shrink it
+            # progressively otherwise then we'll never improve our answer
+            if np.any(argmins == 0) or np.any(argmins == n_guess_rng-1):
+                width = 0.1
+            else:
+                width = 0.1 / (i+1)
+            c_rng = np.linspace(
+                (1-width)*cdelta[k], (1+width)*cdelta[k], n_guess_rng)
+            delta_c_diff = np.abs(
+                self._f_delta_c(c_rng, overdensity)/self.delta_c[k]-1)
+            argmins = np.argmin(delta_c_diff, axis=0)
+            delta_c_err[k] = np.diagonal(
+                delta_c_diff[argmins], axis1=-2, axis2=-1)
+            if (delta_c_err[k] <= err).sum():
+                j = (delta_c_err <= err)
+                cdelta[k & j] = np.diagonal(
+                    c_rng[argmins], axis1=-2, axis2=-1)[j[k]]
+            i += 1
+            if i == max_iter:
+                warn = f'Did not achieve convergence after {max_iter}' \
+                       f' iterations; error on delta_c =' \
+                       f' {delta_c_err[k].mean():.2e} +/-' \
+                       f' {delta_c_err[k].std():.2e}' \
+                       f' (max err = {delta_c_err[k].max():.2e})'
+                warnings.warn(warn)
+                break
+        mfactor = (overdensity/self.overdensity) * (cdelta/self.c)**3
+        return mfactor*self.mass, cdelta
 
 
 class GNFW(BaseNFW):
