@@ -2,7 +2,7 @@ from astropy import constants as ct, units as u
 from astropy.cosmology import FLRW, Planck15
 
 
-class BaseCosmo(object):
+class BaseCosmo:
 
     def __init__(self, cosmo=Planck15, frame='comoving'):
         assert isinstance(cosmo, FLRW), \
@@ -30,7 +30,6 @@ class BaseCosmo(object):
         if self.__G is None:
             self.__G = ct.G.to(u.Mpc**3/u.Msun/u.s**2).value
         return self.__G
-
 
     # these two are defined like this so that if the user changes
     # the coordinate frame halfway through, all calculations will

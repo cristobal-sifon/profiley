@@ -1,6 +1,7 @@
 from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
+import pyccl as ccl
 from scipy.special import sici
 import warnings
 
@@ -100,13 +101,18 @@ class BaseNFW(Profile):
             mass and concentrations calculated at the requested
             overdensity
         """
+        self._assert_background(background)
         if overdensity == self.overdensity \
                 and background == self.background:
             return self.mass
-        if background != self.background:
-            msg = 'converting masses with different background definitions' \
-                  ' not yet implemented'
-            raise NotImplementedError(msg)
+        if background == self.background:
+            bgfactor = 1
+        else:
+            # this is m to c
+            bgfactor = self.mean_density / self.critical_density
+            # reciprocal for c to m
+            if background == 'm':
+                bgfactor = 1 / bgfactor
         # to handle arbitrary dimensions
         c_shape = self.c.shape
         self_c = self.c.reshape(-1)
@@ -152,8 +158,9 @@ class BaseNFW(Profile):
                        f' (max err = {delta_c_err[k].max():.2e})'
                 warnings.warn(warn)
                 break
-        # back to the original shape
-        cdelta = cdelta.reshape(c_shape)
+        # back to the original shape, also correcting for different
+        # background, if applicable
+        cdelta = bgfactor**(1/3) * cdelta.reshape(c_shape)
         # calculate mass from the relation between mass, c, and overdensity
         mfactor = (overdensity/self.overdensity) * (cdelta/self.c)**3
         return mfactor*self.mass, cdelta
