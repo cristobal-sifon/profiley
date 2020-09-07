@@ -73,7 +73,7 @@ class BaseNFW(Profile):
     ### methods ###
 
     def mdelta(self, overdensity, background='c', err=1e-3, n_guess_rng=1000,
-               max_iter=10):
+               max_iter=50):
         """Calculate mass at any overdensity from the original mass
         definition
 
@@ -96,7 +96,7 @@ class BaseNFW(Profile):
 
         Returns
         -------
-        mdelta, cdelta : ndarray
+        mdelta, cdelta : ndarray, shape ``self.c.shape``
             mass and concentrations calculated at the requested
             overdensity
         """
@@ -107,13 +107,16 @@ class BaseNFW(Profile):
             msg = 'converting masses with different background definitions' \
                   ' not yet implemented'
             raise NotImplementedError(msg)
+        # to handle arbitrary dimensions
+        c_shape = self.c.shape
+        self_c = self.c.reshape(-1)
+        self_delta_c = self.delta_c.reshape(-1)
         # I found that this guess is good to within 20% typically
-        c_guess = (self.overdensity/overdensity)**0.5 * self.c
+        c_guess = (self.overdensity/overdensity)**0.5 * self_c
         c_rng = np.linspace(0.5*c_guess, 1.5*c_guess, n_guess_rng)
         delta_c_rng = self._f_delta_c(c_rng, overdensity)
-        delta_c_diff = np.abs(delta_c_rng/self.delta_c - 1)
+        delta_c_diff = np.abs(delta_c_rng/self_delta_c - 1)
         argmins = np.argmin(delta_c_diff, axis=0)
-        # this works only for 2d :/
         # without the copy I am not allowed to write into this array
         cdelta = np.diagonal(c_rng[argmins], axis1=-2, axis2=-1).copy()
         # delta_c_err are the minima of delta_c_diff
@@ -132,7 +135,7 @@ class BaseNFW(Profile):
             c_rng = np.linspace(
                 (1-width)*cdelta[k], (1+width)*cdelta[k], n_guess_rng)
             delta_c_diff = np.abs(
-                self._f_delta_c(c_rng, overdensity)/self.delta_c[k]-1)
+                self._f_delta_c(c_rng, overdensity)/self_delta_c[k]-1)
             argmins = np.argmin(delta_c_diff, axis=0)
             delta_c_err[k] = np.diagonal(
                 delta_c_diff[argmins], axis1=-2, axis2=-1)
@@ -149,6 +152,9 @@ class BaseNFW(Profile):
                        f' (max err = {delta_c_err[k].max():.2e})'
                 warnings.warn(warn)
                 break
+        # back to the original shape
+        cdelta = cdelta.reshape(c_shape)
+        # calculate mass from the relation between mass, c, and overdensity
         mfactor = (overdensity/self.overdensity) * (cdelta/self.c)**3
         return mfactor*self.mass, cdelta
 

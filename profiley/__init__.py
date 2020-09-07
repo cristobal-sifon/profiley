@@ -48,4 +48,4 @@ from .helpers.cosmology import BaseCosmo
 from .helpers.lensing import BaseLensing
 """
 
-__version__ = '1.1.0b7'
+__version__ = '1.1.0b8'
