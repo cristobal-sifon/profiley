@@ -1,3 +1,4 @@
+import astropy
 from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
@@ -13,9 +14,15 @@ from .helpers.spherical import mass_from_radius, radius_from_mass
 
 class BaseNFW(Profile):
 
-    def __init__(self, mass, c, z, overdensity=200, background='c',
-                 cosmo=Planck15, frame='comoving', numeric_kwargs={}):
+    def __init__(self, mass, c, z, overdensity: float=500,
+                 background: str='c', cosmo: astropy.cosmology.FLRW=Planck15,
+                 frame: str='comoving', numeric_kwargs={}):
+        # check overdensity and background
         self._assert_background(background)
+        if overdensity <= 0:
+            raise ValueError(
+                f'overdensity must be positive; received {overdensity}')
+
         if isinstance(mass, u.Quantity):
             mass = mass.to(u.Msun).value
         if not np.iterable(mass):
@@ -73,8 +80,8 @@ class BaseNFW(Profile):
 
     ### methods ###
 
-    def mdelta(self, overdensity, background='c', err=1e-3, n_guess_rng=1000,
-               max_iter=50):
+    def mdelta(self, overdensity: float, background: str='c', err: float=1e-3,
+               n_guess_rng: int=1000, max_iter: int=50):
         """Calculate mass at any overdensity from the original mass
         definition
 
@@ -82,11 +89,14 @@ class BaseNFW(Profile):
         ----------
         overdensity : float
             overdensity at which the mass should be calculated
-        background : one of ('c','m'), optional
+
+        Optional parameters
+        -------------------
+        background : one of ('c','m')
             background density as a reference for ``overdensity``.
             WARNING: currently only the same background as used in
             defining this object is implemented
-        err: float, optional
+        err: float
             maximum error on ``delta_c`` that can be tolerated to claim
             convergence
         n_guess_rng : int, optional
@@ -105,6 +115,7 @@ class BaseNFW(Profile):
         if overdensity == self.overdensity \
                 and background == self.background:
             return self.mass
+        # do we need to convert the background density?
         if background == self.background:
             bgfactor = 1
         else:
@@ -210,6 +221,20 @@ class NFW(BaseNFW):
 
         \rho(r) = \frac{\delta_\mathrm{c}\rho_\mathrm{bg}}
                     {(r/r_\mathrm{s})(1+r/r_\mathrm{s})^2}
+
+    Parameters
+    ----------
+    mass, c, z : float or np.ndarray
+        mass, concentration, and redshift defining the NFW profile.
+        Their shapes are arbitrary but they must be such that they can
+        be multiplied together as they come
+
+    Optional parameters
+    -------------------
+    overdensity : float
+        overdensity with respect to the background density
+    background : str
+        'c' (critical) or 'm' (mean) background density
     """
 
     def __init__(self, mass, c, z, overdensity=500, background='c',
@@ -220,8 +245,8 @@ class NFW(BaseNFW):
 
     def __repr__(self):
         msg = f'NFW profile object containing {np.prod(self._shape)}' \
-              f' profiles. shape: {self._shape})\n' \
-              f'Overdensity: {self.overdensity}{self.background}'
+              f' profiles. shape: {self._shape}'
+        od_msg = f'overdensity: {self.overdensity}{self.background}'
         if np.iterable(self.mass) and self.mass.min() < self.mass.max():
             mass_msg = f'log mass range = {np.log10(self.mass.min()):.2f}' \
                        f'-{np.log10(self.mass.max()):.2f}'
@@ -235,7 +260,8 @@ class NFW(BaseNFW):
             z_msg = f'redshift range = {self.z.min():.2f}-{self.z.max():.2f}'
         else:
             z_msg = f'redshift = {np.unique(self.z)[0]:.2f}'
-        return f'{msg}\n  {mass_msg}\n  {c_msg}\n  {z_msg}'
+        #return f'{msg}\n  {mass_msg}\n  {c_msg}\n  {z_msg}'
+        return '\n  '.join([msg, od_msg, mass_msg, c_msg, z_msg])
 
     ### main methods ###
 
