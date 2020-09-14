@@ -212,6 +212,25 @@ class NFW(BaseNFW):
     def __init__(self, mass, c, z, **kwargs):
         super(NFW, self).__init__(mass, c, z, **kwargs)
 
+    def __repr__(self):
+        msg = f'NFW profile object containing {np.prod(self._shape)}' \
+              f' profiles. shape: {self._shape})\n' \
+              f'Overdensity: {self.overdensity}{self.background}'
+        if np.iterable(self.mass) and self.mass.min() < self.mass.max():
+            mass_msg = f'log mass range = {np.log10(self.mass.min()):.2f}' \
+                       f'-{np.log10(self.mass.max()):.2f}'
+        else:
+            mass_msg = f'log mass = {np.log10(np.unique(self.mass)[0]):.2f}'
+        if np.iterable(self.c) and self.c.min() < self.c.max():
+            c_msg = f'concentration range = {self.c.min():.2f}-{self.c.max():.2f}'
+        else:
+            c_msg = f'concentration = {np.unique(self.c)[0]:.2f}'
+        if np.iterable(self.z) and self.z.min() < self.z.max():
+            z_msg = f'redshift range = {self.z.min():.2f}-{self.z.max():.2f}'
+        else:
+            z_msg = f'redshift = {np.unique(self.z)[0]:.2f}'
+        return f'{msg}\n  {mass_msg}\n  {c_msg}\n  {z_msg}'
+
     ### main methods ###
 
     @inMpc
