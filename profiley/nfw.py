@@ -182,8 +182,11 @@ class GNFW(BaseNFW):
 
     """
 
-    def __init__(self, mass, c, z, alpha, beta, gamma, **kwargs):
-        super().__init__(mass, c, z, **kwargs)
+    def __init__(self, mass, c, z, alpha, beta, gamma, overdensity=500,
+                 background='c', frame='comoving', cosmo=Planck15, **kwargs):
+        super().__init__(
+            mass, c, z, overdensity=overdensity, background=background,
+            frame=frame, cosmo=cosmo, **kwargs)
         self.alpha = self._define_array(alpha)
         self.beta = self._define_array(beta)
         self.gamma = self._define_array(gamma)
@@ -209,8 +212,11 @@ class NFW(BaseNFW):
                     {(r/r_\mathrm{s})(1+r/r_\mathrm{s})^2}
     """
 
-    def __init__(self, mass, c, z, **kwargs):
-        super(NFW, self).__init__(mass, c, z, **kwargs)
+    def __init__(self, mass, c, z, overdensity=500, background='c',
+                 frame='comoving', cosmo=Planck15, **kwargs):
+        super(NFW, self).__init__(
+            mass, c, z, overdensity=overdensity, background=background,
+            frame=frame, cosmo=cosmo, **kwargs)
 
     def __repr__(self):
         msg = f'NFW profile object containing {np.prod(self._shape)}' \
