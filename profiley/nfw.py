@@ -248,12 +248,15 @@ class NFW(BaseNFW):
               f' profiles. shape: {self._shape}'
         od_msg = f'overdensity: {self.overdensity}{self.background}'
         if np.iterable(self.mass) and self.mass.min() < self.mass.max():
-            mass_msg = f'log mass range = {np.log10(self.mass.min()):.2f}' \
+            mass_msg = 'log10 mass/Msun range =' \
+                       f' {np.log10(self.mass.min()):.2f}' \
                        f'-{np.log10(self.mass.max()):.2f}'
         else:
-            mass_msg = f'log mass = {np.log10(np.unique(self.mass)[0]):.2f}'
+            mass_msg = 'log10 mass/Msun =' \
+                       f' {np.log10(np.unique(self.mass)[0]):.2f}'
         if np.iterable(self.c) and self.c.min() < self.c.max():
-            c_msg = f'concentration range = {self.c.min():.2f}-{self.c.max():.2f}'
+            c_msg = 'concentration range =' \
+                    f' {self.c.min():.2f}-{self.c.max():.2f}'
         else:
             c_msg = f'concentration = {np.unique(self.c)[0]:.2f}'
         if np.iterable(self.z) and self.z.min() < self.z.max():

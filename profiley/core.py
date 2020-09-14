@@ -58,6 +58,8 @@ class Profile(BaseLensing):
     arrays, their dimensions must be such that a product can be carried
     out without any manipulation.
 
+    Profile projections
+    -------------------
 
     If the projection of this profile is analytical, any or all of the
     following methods can also be specified: ::
@@ -68,7 +70,18 @@ class Profile(BaseLensing):
         offset_profile3d(self, R, Roff)
         offset_surface_density(self, R, Roff)
         offset_enclosed_surface_density(self, R, Roff)
-        offset_excess_surface_density
+        offset_excess_surface_density(self, R, Roff)
+
+    If it does not have analytical expressions, these methods will also
+    exist, but they will be calculated numerically, so they may be
+    somewhat slower depending on the precision required.
+
+    Cosmology
+    ---------
+
+    All ``Profile`` objects contain all cosmological information with
+    they have been initialized through the ``self.cosmo`` attribute,
+    which can be any ``astropy.cosmology.FLRW`` object.
 
     """
 
