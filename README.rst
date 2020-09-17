@@ -15,8 +15,6 @@ References
 
 ``profiley`` has been used in `Madhavacheril et al. (2020)`__.
 
-.. _examples: examples/
-
 .. _Madhavacheril: https://ui.adsabs.harvard.edu/abs/2020arXiv200907772M/abstract
 
 __ Madhavacheril_
