@@ -32,6 +32,10 @@ def read(fname):
         return open(fname).read()
 
 
+def read_requirements(reqfile):
+    return [i for i in open(reqfile).read().split('\n') if i]
+
+
 setup(
     name='profiley',
     version=find_version('profiley/__init__.py'),
@@ -42,6 +46,7 @@ setup(
     long_description_content_type='text/x-rst',
     url='https://github.com/cristobal-sifon/profiley',
     packages=find_packages(),
+    install_requires=read_requirements('requirements.txt'),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
