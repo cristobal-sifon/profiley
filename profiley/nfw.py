@@ -2,7 +2,6 @@ import astropy
 from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
-import pyccl as ccl
 from scipy.special import sici
 import warnings
 
