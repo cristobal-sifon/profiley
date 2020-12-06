@@ -38,14 +38,15 @@ def read_requirements(reqfile):
 
 setup(
     name='profiley',
-    version=find_version('profiley/__init__.py'),
+    version=find_version('src/profiley/__init__.py'),
     description='Calculation of common astrophysical profiles',
     author='Cristobal Sifon',
     author_email='cristobal.sifon@pucv.cl',
     long_description=read('README.rst'),
     long_description_content_type='text/x-rst',
     url='https://github.com/cristobal-sifon/profiley',
-    packages=find_packages(),
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     install_requires=read_requirements('requirements.txt'),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
