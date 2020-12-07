@@ -175,6 +175,10 @@ class BaseNFW(Profile):
         mfactor = (overdensity/self.overdensity) * (cdelta/self.c)**3
         return mfactor*self.mass, cdelta
 
+    def density(self, *args, **kwargs):
+        """Alias for ``self.profile``"""
+        return self.profile(*args, **kwargs)
+
 
 class GNFW(BaseNFW):
     """Generalized NFW profile
@@ -205,7 +209,7 @@ class GNFW(BaseNFW):
 
     @inMpc
     @array
-    def density(self, r):
+    def profile(self, r):
         exp = (self.beta-self.gamma) / self.alpha
         return self.delta_c * self.rho_bg \
             / ((r/self.rs)**self.gamma * (1+(r/self.rs)**alpha)**exp)
@@ -234,6 +238,8 @@ class NFW(BaseNFW):
         overdensity with respect to the background density
     background : str
         'c' (critical) or 'm' (mean) background density
+    cosmo : Astropy.cosmology.FLRW
+        cosmology object
     """
 
     def __init__(self, mass, c, z, overdensity=500, background='c',
@@ -262,14 +268,13 @@ class NFW(BaseNFW):
             z_msg = f'redshift range = {self.z.min():.2f}-{self.z.max():.2f}'
         else:
             z_msg = f'redshift = {np.unique(self.z)[0]:.2f}'
-        #return f'{msg}\n  {mass_msg}\n  {c_msg}\n  {z_msg}'
         return '\n  '.join([msg, od_msg, mass_msg, c_msg, z_msg])
 
     ### main methods ###
 
     @inMpc
     @array
-    def density(self, r):
+    def profile(self, r):
         """Three-dimensional density profile"""
         return self.delta_c * self.rho_bg / (r/self.rs * (1+r/self.rs)**2)
 

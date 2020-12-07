@@ -46,7 +46,7 @@ class Profile(BaseLensing):
                 self._set_shape(norm*slope)
 
             @array
-            def profile3d(self, r):
+            def profile(self, r):
                 return self.norm * r**self.slope
 
     That's it! The ``__init__()`` method needs only two lines of code
@@ -204,7 +204,7 @@ class Profile(BaseLensing):
                 [np.hypot(*np.meshgrid(Rlos[:,i], R[:,0]))
                  for i in range(Rlos.shape[1])],
                 axes=(1,2,0))
-        return 2 * simps(self.density(R), Rlos[None], axis=1)
+        return 2 * simps(self.profile(R), Rlos[None], axis=1)
 
     @inMpc
     @array
@@ -286,7 +286,7 @@ class Profile(BaseLensing):
         return off / (2*np.pi)
 
     def offset_density(self, R, Roff):
-        return self.offset(self.density, R, Roff)
+        return self.offset(self.profile, R, Roff)
 
     def offset_surface_density(self, R, Roff, **kwargs):
         """Surface density measured around a position offset from the
@@ -312,10 +312,10 @@ class Profile(BaseLensing):
     def offset_excess_surface_density(self, R, Roff, **kwargs):
         return self.offset(self.excess_surface_density, R, Roff, **kwargs)
 
-    def fourier(self, rmax=10, dr=0.1):
+    def _fourier(self, rmax=10, dr=0.1):
         """This is not working yet! Might just need to fall back to quad"""
         r = np.arange(dr, rmax, dr)
-        f = self.density(r)
+        f = self.profile(r)
         # compute Fourier transform by numpy's FFT function
         g = np.fft.fft(f)
         print('g =', g.shape)
@@ -393,7 +393,7 @@ class Profile(BaseLensing):
     @inMpc
     @array
     def _quad_surface_density(self, R):
-        integrand = lambda r, Ro: self.density((r**2+Ro**2)**0.5)
+        integrand = lambda r, Ro: self.profile((r**2+Ro**2)**0.5)
         return np.array([[quad(integrand, 0, np.inf, args=(Rij,))
                           for Rij in Ri] for Ri in R])
 
