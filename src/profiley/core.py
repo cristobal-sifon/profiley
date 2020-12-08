@@ -9,13 +9,6 @@ try:
 except ImportError:
     has_ccl = False
 
-try:
-    import pixell.enmap
-    import pixell.utils
-    has_pixell = True
-except ImporError:
-    has_pixell = False
-
 from .helpers.cosmology import BaseCosmo
 from .helpers.decorators import array, inMpc
 from .helpers.lensing import BaseLensing

@@ -6,16 +6,6 @@ from scipy.interpolate import interp1d
 
 from pixell import enmap
 import pixell.fft
-import pixell.utils
-
-
-def kfilterer(f):
-    """Decorator to filter a profile in k-space"""
-    raise NotImplementedError('decorator `kfilterer` not yet implemented')
-    def decorated(*args, **kwargs):
-        if kwargs.get('filter'):
-            # do filtering!
-            kmask = enmap.read_map(kwargs.get('filter'))
 
 
 class Filter:
