@@ -26,38 +26,27 @@ class PressureGNFW(BaseNFW):
         redshift
     normalization_name : {'M500','P500'}
         specifies to what parameter ``normalization`` corresponds
-    P500_M500_params : list-like, length=4
+    pm_params : list-like, length=4
         the four parameters that determine the scaling relation between
-        M500 and P500. See ``P500_from_M500``
+        M500 and P500 (or any other overdensity). See ``P500_from_M500``
     cosmo : astropy.cosmology.FLRW
         cosmology object
     """
-    # in case I implement it later:
-    #normalization : float or np.ndarray
-        #either P500 or M500. If the latter, P500 is calculated assuming
-        #a power-law scaling relation following Eq. (3) of Nagain et al.
-        #(2007).
 
     def __init__(self, mass, P0, c, alpha, beta, gamma, z=0,
-                 #normalization_name='M500',
-                 P500_M500_params=(1.45e-11*u.erg/u.cm**3,1e15,2/3,8/3),
-                 **kwargs):
-        #assert normalization_name in ('M500','P500'), \
-            #"argument `normalization_name` must be one of ('M500','P500')," \
-            #f" received {normalization_name} instead"
-        #self.normalization = normalization
-        #self.normalization_name = normalization_name
+                 pm_params=(1.45e-11*u.erg/u.cm**3,1e15,2/3,8/3),
+                 cosmo=Planck15, **kwargs):
+        assert len(pm_params) == 4, \
+            'argument ``pm_params`` must contain 4 elements, received' \
+            ' {len(pm_params)} instead'
         super().__init__(mass, c, z, **kwargs)
         self.P0 = P0
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
+        self.pm_params = pm_params
         self._set_shape(mass*P0*c*alpha*beta*gamma*z)
-        #self._set_shape(normalization*P0*c*alpha*beta*gamma*z)
-        #if self.normalization_name == 'P500':
-            #self.P500 = self.normalization
-        #else:
-        self.P500 = self.P500_from_M500(*P500_M500_params)
+        self.P500 = self.P500_from_M500(*self.pm_params)
 
     @array
     def upp(self, x):
@@ -66,7 +55,7 @@ class PressureGNFW(BaseNFW):
         .. math::
 
             p(x) = \\frac{P_0}
-                {(cx)^\\gamma\\left[1+(cx)^\\alpha\\right]^(\\beta-\\gamma)/\\alpha
+                {(cx)^\\gamma\\left[1+(cx)^\\alpha\\right]^(\\beta-\\gamma)/\\alpha}
 
         where :math:`x=r/r_{500}`
         """
@@ -87,10 +76,29 @@ class PressureGNFW(BaseNFW):
         Both P500 and M500 may actually refer to any overdensity; the function
         name simply reflects the usual parameterization
         """
-        return a * (self.mass/b)**c \
-            * (self.cosmo.H(self.z)/self.cosmo.H0)**d
+        return a * (self.mass/b)**c * self.cosmo.efunc(self.z)**d
 
     @array
     def profile(self, r):
         return self.P500 * self.upp(r/self.rs)
+
+
+class Arnaud10(PressureGNFW):
+    """GNFW profile with the best-fit parameters from Arnaud et al.
+    (2010)
+
+    All parameters can be modified as desired, but default parameters
+    correspond to equations 12 and 13 from Arnaud et al. (2010), which
+    makes it convenient for modifying only one or a few parameters at a
+    time
+    """
+
+    def __init__(self, mass, P0=8.403, c=1.177, alpha=1.0510, beta=5.4905,
+                 gamma=0.3081, z=0,
+                 pm_params=(1.65e-3*u.keV/u.cm**3,3e14,2/3+0.12,8/3),
+                 cosmo=Planck15, **kwargs):
+        super().__init__(
+            mass, P0, c, alpha, beta, gamma, z=z, pm_params=pm_params,
+            cosmo=cosmo, **kwargs)
+
 
