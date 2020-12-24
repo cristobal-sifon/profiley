@@ -12,6 +12,7 @@ from .helpers.spherical import mass_from_radius, radius_from_mass
 
 
 class BaseNFW(Profile):
+    """Base class for NFW-like density profiles"""
 
     def __init__(self, mass, c, z, overdensity: float=500,
                  background: str='c', cosmo: astropy.cosmology.FLRW=Planck15,
@@ -183,7 +184,7 @@ class BaseNFW(Profile):
 class GNFW(BaseNFW):
     """Generalized NFW profile
 
-    Density profile described by
+    Density profile:
 
     .. math::
 
@@ -191,12 +192,35 @@ class GNFW(BaseNFW):
                     {(r/r_\mathrm{s})^\gamma
                         \left[1+(r/r_\mathrm{s})^\alpha\right]^(\beta-\gamma)/\alpha
 
-    A common but more restriced GNFW profile can be recovered by setting
-    alpha=1, beta=3.
+    Parameters
+    ----------
+    mass, c, z : float or np.ndarray
+        mass, concentration, and redshift defining the NFW profile.
+        Their shapes are arbitrary but they must be such that they can
+        be multiplied together as they come
 
+    Optional parameters
+    -------------------
+    alpha : float or np.ndarray
+        sharpness of the transition between inner and outer slope
+        around the scale radius. A larger value produces a sharper
+        transition.
+    beta : float or np.ndarray
+        slope of the density profile at large radii
+    gamma : float or np.ndarray
+        slope of the density profile at small radii
+
+    For additional optional parameters see ``NFW``
+
+    Notes
+    -----
+    - A common but more restriced GNFW profile can be recovered by setting
+        alpha=1, beta=3 and varying gamma alone
+    - The default parameters (alpha=1, beta=3, gamma=1) correspond to the
+        regular NFW profile
     """
 
-    def __init__(self, mass, c, z, alpha, beta, gamma, overdensity=500,
+    def __init__(self, mass, c, z, alpha=1, beta=3, gamma=1, overdensity=500,
                  background='c', frame='comoving', cosmo=Planck15, **kwargs):
         super().__init__(
             mass, c, z, overdensity=overdensity, background=background,
@@ -212,7 +236,7 @@ class GNFW(BaseNFW):
     def profile(self, r):
         exp = (self.beta-self.gamma) / self.alpha
         return self.delta_c * self.rho_bg \
-            / ((r/self.rs)**self.gamma * (1+(r/self.rs)**alpha)**exp)
+            / ((r/self.rs)**self.gamma * (1+(r/self.rs)**self.alpha)**exp)
 
 
 class NFW(BaseNFW):
@@ -321,3 +345,51 @@ class NFW(BaseNFW):
         return 4 * np.pi * self.rho_bg * self.delta_c * self.rs**3 / self.mass \
             * (np.sin(ki)*(asi-bs) - (np.sin(self.c*ki) / ((1+self.c)*ki)) \
                + np.cos(ki)*(ac-bc))
+
+
+class TNFW(BaseNFW):
+    """Truncated NFW profile
+
+    The density profile is given by
+
+    .. math::
+
+        \rho(r) = \frac{\delta_\mathrm{c}\rho_\mathrm{bg}}
+                    {(r/r_\mathrm{s})(1+r/r_\mathrm{s})^2}
+                    \left(\frac{\tau^2}{\tau^2+(r/r_\mathrm{s})^2}\right)^{\mathrm{exp}}
+
+    Analytical expressions for projected profiles have been derived by
+    Baltz, Marshall & Oguri for the cases of ``exp={1,2}``. Here the
+    projected profiles are calculated numerically.
+
+    Parameters
+    ----------
+    mass, c, z : float or np.ndarray
+        mass, concentration, and redshift defining the NFW profile.
+        Their shapes are arbitrary but they must be such that they can
+        be multiplied together as they come
+
+    Optional parameters
+    -------------------
+    tau : float or np.ndarray
+        truncation radius, in units of the scale radius
+    exp : float or np.ndarray
+        exponent of the decay beyond the truncation radius. Set to zero
+        to recover regular NFW
+
+    For additional optional parameters see ``NFW``
+    """
+
+    def __init__(self, mass, c, z, tau=1, exp=1, **kwargs):
+        super().__init__(mass, c, z, **kwargs)
+        self.tau = tau
+        self.exp = exp
+
+    ### main methods ###
+
+    @inMpc
+    @array
+    def profile(self, r):
+        x = r / self.rs
+        return self.delta_c * self.rho_bg / (x * (1+x)**2) \
+            * (self.tau**2 / (self.tau**2 + x**2))**self.exp
