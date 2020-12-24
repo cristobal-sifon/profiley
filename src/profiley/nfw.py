@@ -354,9 +354,22 @@ class TNFW(BaseNFW):
 
     .. math::
 
-        \rho(r) = \frac{\delta_\mathrm{c}\rho_\mathrm{bg}}
-                    {(r/r_\mathrm{s})(1+r/r_\mathrm{s})^2}
-                    \left(\frac{\tau^2}{\tau^2+(r/r_\mathrm{s})^2}\right)^{\mathrm{exp}}
+        \rho(r) = \frac{\delta_\mathrm{c}\rho_\mathrm{bg}}{x(1+x)^2}
+                    \left(\frac{\tau^2}{\tau^2+x^2}\right)^{\mathrm{exp}}
+
+    with
+
+    .. math::
+
+        x = r/r_\mathrm{s}
+
+    and
+
+    .. math::
+
+        tau = r_\mathrm{t}/r_\mathrm{s}
+
+    the truncation radius in units of the scale radius.
 
     Analytical expressions for projected profiles have been derived by
     Baltz, Marshall & Oguri for the cases of ``exp={1,2}``. Here the
