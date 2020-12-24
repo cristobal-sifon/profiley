@@ -22,7 +22,6 @@ class BaseNFW(Profile):
         if overdensity <= 0:
             raise ValueError(
                 f'overdensity must be positive; received {overdensity}')
-
         if isinstance(mass, u.Quantity):
             mass = mass.to(u.Msun).value
         if not np.iterable(mass):
@@ -221,13 +220,13 @@ class GNFW(BaseNFW):
 
     def __init__(self, mass, c, z, alpha=1, beta=3, gamma=1, overdensity=500,
                  background='c', frame='comoving', cosmo=Planck15, **kwargs):
+        self._set_shape(mass*c*z*alpha*beta*gamma)
         super().__init__(
             mass, c, z, overdensity=overdensity, background=background,
             frame=frame, cosmo=cosmo, **kwargs)
         self.alpha = self._define_array(alpha)
         self.beta = self._define_array(beta)
         self.gamma = self._define_array(gamma)
-        self._set_shape(mass*c*z*alpha*beta*gamma)
 
     ### main methods ###
 
@@ -268,10 +267,10 @@ class NFW(BaseNFW):
 
     def __init__(self, mass, c, z, overdensity=500, background='c',
                  frame='comoving', cosmo=Planck15, **kwargs):
+        self._set_shape(mass*c*z)
         super(NFW, self).__init__(
             mass, c, z, overdensity=overdensity, background=background,
             frame=frame, cosmo=cosmo, **kwargs)
-        self._set_shape(mass*c*z)
 
     def __repr__(self):
         msg = f'NFW profile object containing {np.prod(self._shape)}' \
@@ -395,10 +394,10 @@ class TNFW(BaseNFW):
     """
 
     def __init__(self, mass, c, z, tau=1, exp=1, **kwargs):
+        self._set_shape(mass*c*z*tau*exp)
         super().__init__(mass, c, z, **kwargs)
         self.tau = tau
         self.exp = exp
-        self._set_shape(mass*c*z*tau*exp)
 
     ### main methods ###
 
