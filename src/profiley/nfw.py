@@ -27,7 +27,6 @@ class BaseNFW(Profile):
             mass = mass.to(u.Msun).value
         if not np.iterable(mass):
             mass = np.array([mass])
-        self._set_shape(mass*c*z)
         self.mass = mass
         self.c = c
         self.background = background
@@ -228,6 +227,7 @@ class GNFW(BaseNFW):
         self.alpha = self._define_array(alpha)
         self.beta = self._define_array(beta)
         self.gamma = self._define_array(gamma)
+        self._set_shape(mass*c*z*alpha*beta*gamma)
 
     ### main methods ###
 
@@ -271,6 +271,7 @@ class NFW(BaseNFW):
         super(NFW, self).__init__(
             mass, c, z, overdensity=overdensity, background=background,
             frame=frame, cosmo=cosmo, **kwargs)
+        self._set_shape(mass*c*z)
 
     def __repr__(self):
         msg = f'NFW profile object containing {np.prod(self._shape)}' \
@@ -397,6 +398,7 @@ class TNFW(BaseNFW):
         super().__init__(mass, c, z, **kwargs)
         self.tau = tau
         self.exp = exp
+        self._set_shape(mass*c*z*tau*exp)
 
     ### main methods ###
 
