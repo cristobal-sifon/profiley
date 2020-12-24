@@ -87,7 +87,8 @@ class Profile(BaseLensing):
         ----------------------------------------------------
         los_loglimit : int
             log10-limit for the line-of-sight integration, in units
-            of `rvir`
+            of the radius of the cluster (e.g., r200, r500, etc,
+            as defined when the object was initialized)
         Rlos : int
             number of samples for the line-of-sight integrals
         resampling : int
@@ -100,8 +101,8 @@ class Profile(BaseLensing):
             (the endpoint will be added when sampling the following bin)
         logleft : int
             log10-starting point for the integration of the enclosed
-            surface density, in units of `rvir`. The closer to zero this
-            number the better
+            surface density, in units of the cluster radius. The closer
+            to zero this number the better
         left_samples : int
             number of samples to use between `logleft` and `R[0]`,
             with a logarithmic sampling
@@ -188,11 +189,11 @@ class Profile(BaseLensing):
         # things up a little without giving up much.
         if single_R:
             Rlos = np.logspace(-10, self.los_loglimit, self.Rlos) \
-                * self.rvir.max()
+                * self.radius.max()
             R = np.hypot(*np.meshgrid(Rlos, R[0]))
         else:
             Rlos = np.logspace(-10, self.los_loglimit, self.Rlos)[:,None] \
-                * self.rvir
+                * self.radius
             R = np.transpose(
                 [np.hypot(*np.meshgrid(Rlos[:,i], R[:,0]))
                  for i in range(Rlos.shape[1])],
