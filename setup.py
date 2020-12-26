@@ -50,7 +50,7 @@ setup(
     install_requires=read_requirements('requirements.txt'),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         ],
 )
