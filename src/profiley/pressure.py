@@ -2,7 +2,7 @@ from astropy import units as u
 from astropy.cosmology import Planck15
 
 from .nfw import BaseNFW
-from .helpers.decorators import array
+from .helpers.decorators import array, inMpc
 
 
 class PressureGNFW(BaseNFW):
