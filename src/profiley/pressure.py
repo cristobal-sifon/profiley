@@ -32,7 +32,6 @@ class PressureGNFW(BaseNFW):
     cosmo : astropy.cosmology.FLRW
         cosmology object
     """
-
     def __init__(self, mass, P0, c, alpha, beta, gamma, z=0,
                  pm_params=(1.45e-11*u.erg/u.cm**3,1e15,2/3,8/3),
                  cosmo=Planck15, **kwargs):
@@ -79,6 +78,7 @@ class PressureGNFW(BaseNFW):
         return a * (self.mass/b)**c * self.cosmo.efunc(self.z)**d
 
     @array
+    @inMpc
     def profile(self, r):
         return self.P500 * self.upp(r/self.rs)
 
@@ -92,7 +92,6 @@ class Arnaud10(PressureGNFW):
     makes it convenient for modifying only one or a few parameters at a
     time
     """
-
     def __init__(self, mass, P0=8.403, c=1.177, alpha=1.0510, beta=5.4905,
                  gamma=0.3081, z=0,
                  pm_params=(1.65e-3*u.keV/u.cm**3,3e14,2/3+0.12,8/3),
@@ -100,5 +99,4 @@ class Arnaud10(PressureGNFW):
         super().__init__(
             mass, P0, c, alpha, beta, gamma, z=z, pm_params=pm_params,
             cosmo=cosmo, **kwargs)
-
 
