@@ -395,3 +395,14 @@ class TNFW(BaseNFW):
         x = r / self.rs
         return self.delta_c * self.rho_bg / (x * (1+x)**2) \
             * (self.tau**2 / (self.tau**2 + x**2))**self.exp
+
+
+class Hernquist(GNFW):
+    """Hernquist (1990) profile.
+
+    This is a special case of the GNFW profile with :math:`\alpha=1`,
+    :math:`\beta=4`, and :math:`\gamma=1`.
+    """
+    def __init__(self, mass, c, z, **kwargs):
+        super().__init__(mass, c, z, alpha=1, beta=4, gamma=1, **kwargs)
+
