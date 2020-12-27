@@ -33,10 +33,10 @@ class Profile(BaseLensing):
         class PowerLaw(Profile):
 
             def __init__(self, norm, slope, **kwargs):
+                self._set_shape(norm*slope)
                 super().__init__(**kwargs)
                 self.norm = norm
                 self.slope = slope
-                self._set_shape(norm*slope)
 
             @array
             def profile(self, r):
