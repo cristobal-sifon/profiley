@@ -90,15 +90,9 @@ class BaseLensing(BaseCosmo):
         if zs is None:
             b = self.Dls / self.Ds
         else:
-            #b = float(self.cosmo.angular_diameter_distance_z1z2(self.z, zs) \
-                      #/ self.cosmo.angular_diameter_distance(zs))
             b = (self.cosmo.angular_diameter_distance_z1z2(self.z, zs).to(u.Mpc) \
                  / self.cosmo.angular_diameter_distance(zs).to(u.Mpc)).value
         return np.max([np.zeros_like(b), b])
-
-    #@float_args
-    def excess_surface_density(self, R):
-        return self.enclosed_surface_density(R) - self.surface_density(R)
 
     #@float_args
     def sigma_crit(self, zs=None):
