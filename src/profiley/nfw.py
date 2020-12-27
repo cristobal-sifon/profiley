@@ -17,8 +17,7 @@ class BaseNFW(Profile):
     def __init__(self, mass, c, z, overdensity: float=500,
                  background: str='c', cosmo: astropy.cosmology.FLRW=Planck15,
                  frame: str='comoving', numeric_kwargs={}):
-        # check overdensity and background
-        self._assert_background(background)
+        # check overdensity
         if overdensity <= 0:
             raise ValueError(
                 f'overdensity must be positive; received {overdensity}')
@@ -28,7 +27,6 @@ class BaseNFW(Profile):
             mass = np.array([mass])
         self.mass = mass
         self.c = c
-        self.background = background
         self.overdensity = overdensity
         # additional NFW convenience attributes
         self._delta_c = None
@@ -36,7 +34,8 @@ class BaseNFW(Profile):
         self._radius = None
         self._sigma_s = None
         super().__init__(
-            z, cosmo=cosmo, frame=frame, **numeric_kwargs)
+            z, cosmo=cosmo, background=background, frame=frame,
+            **numeric_kwargs)
 
     ### attributes ###
 
@@ -66,12 +65,6 @@ class BaseNFW(Profile):
         return self._sigma_s
 
     ### hidden methods ###
-
-    def _assert_background(self, background):
-        if background not in 'cm':
-            msg = "background must be either 'c' (critical) or 'm' (mean);" \
-                  f' received {background}'
-            raise ValueError(msg)
 
     def _f_delta_c(self, c, overdensity):
         return (overdensity*c**3/3) / (np.log(1+c) - c/(1+c))

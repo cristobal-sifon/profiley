@@ -8,7 +8,8 @@ from .decorators import float_args
 
 class BaseLensing(BaseCosmo):
 
-    def __init__(self, z, z_s=None, cosmo=Planck15, frame='comoving'):
+    def __init__(self, z, z_s=None, cosmo=Planck15, frame='comoving',
+                 **kwargs):
         """Base lensing calculations for Profile objects
 
         Parameters
@@ -37,7 +38,7 @@ class BaseLensing(BaseCosmo):
             except TypeError as e:
                 msg = 'argument `z_s` must be a float or an array of floats'
                 raise TypeError(msg) from e
-        super().__init__(cosmo=cosmo, frame=frame)
+        super().__init__(cosmo=cosmo, frame=frame, **kwargs)
         self.z = z
         self._z_s = z_s
         self.cosmo = cosmo

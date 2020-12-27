@@ -4,16 +4,18 @@ from astropy.cosmology import FLRW, Planck15
 
 class BaseCosmo:
 
-    def __init__(self, cosmo=Planck15, frame='comoving'):
+    def __init__(self, cosmo=Planck15, background='c', frame='comoving'):
+        # validate arguments
         assert isinstance(cosmo, FLRW), \
             'argument `cosmo` must be an `astropy.cosmology.FLRW` object'
-        self.cosmo = cosmo
+        self._assert_background(background)
         assert frame in ('comoving', 'proper', 'physical')
+        # assign
+        self.cosmo = cosmo
         self.frame = frame
-        self._background = None
-        self._hmf = None
+        self.background = background
         self._overdensity = None
-        self._rho_bg = None
+        # useful constants
         self.__c = None
         self.__G = None
 
@@ -59,3 +61,10 @@ class BaseCosmo:
         if self.background == 'm':
             return self.mean_density
         return self.critical_density
+
+    def _assert_background(self, background):
+        if background not in 'cm':
+            msg = "background must be either 'c' (critical) or 'm' (mean);" \
+                  f' received {background}'
+            raise ValueError(msg)
+
