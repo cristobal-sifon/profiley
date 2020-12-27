@@ -36,7 +36,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="NFW-like profiles" href="nfw/index.html" />
+    <link rel="next" title="Implemented profiles" href="index.html" />
     <link rel="prev" title="profiley" href="../index.html" /> 
 </head>
 
@@ -85,11 +85,11 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">The <code class="docutils literal notranslate"><span class="pre">Profile</span></code> base class</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cosmology">Cosmology</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#gravitational-lensing-functionality">Gravitational lensing functionality</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="nfw/index.html">NFW-like profiles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pressure/index.html">Pressure profiles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Implemented profiles</a></li>
 <li class="toctree-l1"><a class="reference internal" href="custom.html">Custom profiles</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../LICENSE.html">License</a></li>
 </ul>
@@ -185,6 +185,13 @@ of <code class="docutils literal notranslate"><span class="pre">Profile</span></
 <li><p><code class="docutils literal notranslate"><span class="pre">cosmo</span></code>: Astropy cosmology <code class="docutils literal notranslate"><span class="pre">FLRW</span></code> object</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">frame</span></code>: whether calculations proceed in comoving or proper coordinates</p></li>
 </ul>
+<div class="section" id="cosmology">
+<h2>Cosmology<a class="headerlink" href="#cosmology" title="Permalink to this headline">¶</a></h2>
+<p>The cosmology in which a <code class="docutils literal notranslate"><span class="pre">Profile</span></code> object is embedded is specified through the
+<code class="docutils literal notranslate"><span class="pre">cosmo</span></code> optional argument, which must be any <code class="docutils literal notranslate"><span class="pre">astropy.cosmology.FLRW</span></code> object.
+This allows for the definition of the background density as well as calculations
+of distances detailed below.</p>
+</div>
 <div class="section" id="gravitational-lensing-functionality">
 <h2>Gravitational lensing functionality<a class="headerlink" href="#gravitational-lensing-functionality" title="Permalink to this headline">¶</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Profile</span></code> class inherits from the <code class="docutils literal notranslate"><span class="pre">BaseLensing</span></code> helper class,
@@ -214,7 +221,7 @@ which implements quantities relevant for gravitational lensing analysis.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="nfw/index.html" class="btn btn-neutral float-right" title="NFW-like profiles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="index.html" class="btn btn-neutral float-right" title="Implemented profiles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../index.html" class="btn btn-neutral float-left" title="profiley" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

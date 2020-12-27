@@ -28,6 +28,15 @@ of ``Profile`` objects:
 * ``frame``: whether calculations proceed in comoving or proper coordinates
 
 
+Cosmology
+---------
+
+The cosmology in which a ``Profile`` object is embedded is specified through the
+``cosmo`` optional argument, which must be any ``astropy.cosmology.FLRW`` object.
+This allows for the definition of the background density as well as calculations
+of distances detailed below.
+
+
 Gravitational lensing functionality
 -----------------------------------
 

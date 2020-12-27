@@ -54,9 +54,6 @@ arguments can be multiplied without manipulation. For instance,
 
 will produce an array of profiles with shape ``(R.size,5,3,11)``.
 
-    profiles/nfw/index
-    profiles/pressure/index
-    profiles/custom
 
 
 License
