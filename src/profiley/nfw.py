@@ -16,7 +16,7 @@ class BaseNFW(Profile):
 
     def __init__(self, mass, c, z, overdensity: float=500,
                  background: str='c', cosmo: astropy.cosmology.FLRW=Planck15,
-                 frame: str='comoving', numeric_kwargs={}):
+                 frame: str='comoving', **numeric_kwargs):
         # check overdensity
         if overdensity <= 0:
             raise ValueError(
