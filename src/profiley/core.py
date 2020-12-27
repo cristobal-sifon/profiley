@@ -78,18 +78,28 @@ class Profile(BaseLensing):
 
     """
 
-    def __init__(self, z=0, los_loglimit=6, Rlos=200, resampling=20,
+    def __init__(self, z=0, overdensity=500,
+                 los_loglimit=6, nsamples_los=200, resampling=20,
                  logleft=-10, left_samples=100, **kwargs):
         """Initialize a profile object
 
-        Optional parameters for numerical integration
-        for the (enclosed) surface density (see notes below)
-        ----------------------------------------------------
+        Optional arguments
+        ------------------
+        z : float or ndarray of floats
+            redshift
+        overdensity : int or float
+            overdensity with respect to the background (does not apply
+            to all Profile children; see each specific class for
+            details)
+
+        Optional arguments for numerical integration
+        for the projected profiles (see notes below)
+        --------------------------------------------
         los_loglimit : int
             log10-limit for the line-of-sight integration, in units
             of the radius of the cluster (e.g., r200, r500, etc,
             as defined when the object was initialized)
-        Rlos : int
+        nsamples_los : int
             number of samples for the line-of-sight integrals
         resampling : int
             number of samples into which each R-interval in the
@@ -121,10 +131,15 @@ class Profile(BaseLensing):
         currently used `simps` integration).
         """
         super().__init__(z, **kwargs)
+        # check overdensity
+        if overdensity <= 0:
+            raise ValueError(
+                f'overdensity must be positive; received {overdensity}')
+        self.overdensity = overdensity
         # for numerical integration -- perhaps these could be passed
         # in a single dictionary
         self.los_loglimit = los_loglimit
-        self.Rlos = Rlos
+        self.nsamples_los = nsamples_los
         self.resampling = resampling
         self.logleft = logleft
         self.left_samples = left_samples
@@ -188,12 +203,12 @@ class Profile(BaseLensing):
         # Need to test single_R=True again. Perhaps it can speed
         # things up a little without giving up much.
         if single_R:
-            Rlos = np.logspace(-10, self.los_loglimit, self.Rlos) \
-                * self.radius.max()
+            Rlos = self.radius.max() * np.logspace(
+                -10, self.los_loglimit, self.nsamples_los)
             R = np.hypot(*np.meshgrid(Rlos, R[0]))
         else:
-            Rlos = np.logspace(-10, self.los_loglimit, self.Rlos)[:,None] \
-                * self.radius
+            Rlos = self.radius * np.logspace(
+                -10, self.los_loglimit, self.nsamples_los)[:,None]
             R = np.transpose(
                 [np.hypot(*np.meshgrid(Rlos[:,i], R[:,0]))
                  for i in range(Rlos.shape[1])],

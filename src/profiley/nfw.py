@@ -17,25 +17,20 @@ class BaseNFW(Profile):
     def __init__(self, mass, c, z, overdensity: float=500,
                  background: str='c', cosmo: astropy.cosmology.FLRW=Planck15,
                  frame: str='comoving', **numeric_kwargs):
-        # check overdensity
-        if overdensity <= 0:
-            raise ValueError(
-                f'overdensity must be positive; received {overdensity}')
         if isinstance(mass, u.Quantity):
             mass = mass.to(u.Msun).value
         if not np.iterable(mass):
             mass = np.array([mass])
         self.mass = mass
         self.c = c
-        self.overdensity = overdensity
         # additional NFW convenience attributes
         self._delta_c = None
         self._rs = None
         self._radius = None
         self._sigma_s = None
         super().__init__(
-            z, cosmo=cosmo, background=background, frame=frame,
-            **numeric_kwargs)
+            z, overdensity=overdensity, cosmo=cosmo, background=background,
+            frame=frame, **numeric_kwargs)
 
     ### attributes ###
 
