@@ -47,7 +47,7 @@ line of sight, :math:`\Sigma(R)`, can be calculated as follows:
 
 .. math::
 
-    \Sigma(R) = \int_{-\infty}^{+\infty} dr \rho(\sqrt{r^2+R^2})
+    \Sigma(R) = 2\int_0^{+\infty} dr \rho(\sqrt{r^2+R^2})
 
 
 Cumulative projected profile
