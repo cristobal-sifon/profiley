@@ -62,8 +62,8 @@ class Einasto(Profile):
     @array
     @inMpc
     def mass_profile(self, r):
+        """Mass enclosed in a radius r"""
         x = r / self.r_s
         a = 3 / self.alpha
         return self.total_mass / sc.gamma(a) \
             * (sc.gamma(a) - math.gamma(a, 2*x**self.alpha/self.alpha))
-
