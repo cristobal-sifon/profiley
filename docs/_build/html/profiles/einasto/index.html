@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Pressure profiles &mdash; profiley 1.2.1 documentation</title>
+  <title>Einasto profile &mdash; profiley 1.2.1 documentation</title>
   
 
   
@@ -36,8 +36,8 @@
     
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Custom profiles" href="../custom.html" />
-    <link rel="prev" title="Einasto profile" href="../einasto/index.html" /> 
+    <link rel="next" title="Pressure profiles" href="../pressure/index.html" />
+    <link rel="prev" title="NFW-like profiles" href="../nfw/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -87,11 +87,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../profile.html">The <code class="docutils literal notranslate"><span class="pre">Profile</span></code> base class</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Implemented profiles</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../nfw/index.html">NFW-like profiles</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../einasto/index.html">Einasto profile</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Pressure profiles</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#specific-cases">Specific cases</a></li>
-</ul>
-</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Einasto profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pressure/index.html">Pressure profiles</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../custom.html">Custom profiles</a></li>
@@ -144,13 +141,13 @@
         
           <li><a href="../index.html">Implemented profiles</a> &raquo;</li>
         
-      <li>Pressure profiles</li>
+      <li>Einasto profile</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../../_sources/profiles/pressure/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/profiles/einasto/index.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -163,27 +160,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="pressure-profiles">
-<h1>Pressure profiles<a class="headerlink" href="#pressure-profiles" title="Permalink to this headline">¶</a></h1>
-<p>This module does not contain new functional forms, but implements GNFW profiles in a particular parameterization,
-commonly used to describe the pressure profiles of galaxy clusters. The most general pressure profile object is
-the <code class="docutils literal notranslate"><span class="pre">PressureGNFW</span></code>, which defines the following profile:</p>
+  <div class="section" id="einasto-profile">
+<h1>Einasto profile<a class="headerlink" href="#einasto-profile" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">einasto</span></code> module implements the Einasto (1965) density profile,</p>
 <div class="math notranslate nohighlight">
-\[P(r) = \frac{P_0}{x^\gamma(1+x^\alpha)^{(\beta-\gamma)/\alpha}} P_\Delta\]</div>
-<p>where <span class="math notranslate nohighlight">\(\Delta\)</span> is a spherical overdensity of choice (typically 500), and</p>
-<div class="math notranslate nohighlight">
-\[P_\Delta = a\left(\frac{M_\Delta}{b}\right)^c E(z)^d\]</div>
-<p>The parameters <span class="math notranslate nohighlight">\((\alpha,\beta,\gamma)\)</span> are specified as optional arguments
-<code class="docutils literal notranslate"><span class="pre">(alpha,beta,gamma)</span></code> in the definition of the <code class="docutils literal notranslate"><span class="pre">PressureGNFW</span></code> object, while
-the parameters <span class="math notranslate nohighlight">\((a,b,c,d)\)</span> are specified in the <code class="docutils literal notranslate"><span class="pre">pm_scaling</span></code> optional
-argument, which takes a list of four values. By default, all these parameters
-are set to those found by <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2007ApJ...668....1N/abstract">Nagai et al. (2007)</a>.</p>
-<div class="section" id="specific-cases">
-<h2>Specific cases<a class="headerlink" href="#specific-cases" title="Permalink to this headline">¶</a></h2>
-<p>A specific case of a <code class="docutils literal notranslate"><span class="pre">PressureGNFW</span></code> is the <code class="docutils literal notranslate"><span class="pre">Arnaud10</span></code> class, which is a
-<code class="docutils literal notranslate"><span class="pre">PressureGNFW</span></code> object but with all default parameters set to those obtained by
-<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2010A&amp;A...517A..92A/abstract">Arnaud et al. (2010)</a>.</p>
+\[\rho(r) = \rho_\mathrm{s}
+    \exp\left(-\frac2\alpha
+            \left[\left(\frac{r}{r_\mathrm{s}}\right)^\alpha - 1\right]
+        \right)\]</div>
+<p>where <span class="math notranslate nohighlight">\(\alpha&gt;0\)</span>. The calling signature is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">profiley.einasto</span> <span class="kn">import</span> <span class="n">Einasto</span>
+<span class="n">Einasto</span><span class="p">(</span><span class="n">rho_s</span><span class="p">,</span> <span class="n">r_s</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
 </div>
+<p>Unlike the NFW profile, the mass profile derived from this density profile
+converges to a total mass</p>
+<div class="math notranslate nohighlight">
+\[M_\mathrm{tot} = \frac{4\pi\rho_\mathrm{s}r_\mathrm{s}^3}{\alpha}
+    \left(\frac\alpha2\right)^{3/\alpha}\Gamma(3/\alpha)\exp(2/\alpha)\]</div>
+<p>and the mass profile is described by</p>
+<div class="math notranslate nohighlight">
+\[M(x) = M_\mathrm{tot}
+    \frac{\Gamma(3/\alpha) - \Gamma(3/\alpha,2x^\alpha/\alpha)}
+         {\Gamma(3/\alpha)}\]</div>
+<p>where as usual <span class="math notranslate nohighlight">\(x=r/r_\mathrm{s}\)</span> (<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2005MNRAS.358.1325C/abstract">Cardone, Piedipalumbo and Tortora, 2005</a>).</p>
 </div>
 
 
@@ -194,10 +194,10 @@ are set to those found by <a class="reference external" href="https://ui.adsabs.
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../custom.html" class="btn btn-neutral float-right" title="Custom profiles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../pressure/index.html" class="btn btn-neutral float-right" title="Pressure profiles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../einasto/index.html" class="btn btn-neutral float-left" title="Einasto profile" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../nfw/index.html" class="btn btn-neutral float-left" title="NFW-like profiles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
