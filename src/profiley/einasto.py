@@ -67,3 +67,19 @@ class Einasto(Profile):
         a = 3 / self.alpha
         return self.total_mass / sc.gamma(a) \
             * (sc.gamma(a) - math.gamma(a, 2*x**self.alpha/self.alpha))
+
+    def _mdelta(self, overdensity, background='c', err=1e-3, n_guess_rng=1000,
+               max_iter=50):
+        """Iteratively estimate the mass within a spherical overdensity
+        radius
+
+        Parameters
+        ----------
+        overdensity : int or float
+            spherical overdensity within which to calculate the mass
+        """
+        self._assert_background(background)
+        self._assert_overdensity(overdensity)
+        
+        return
+
