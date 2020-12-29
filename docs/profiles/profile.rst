@@ -35,15 +35,57 @@ variant where the profile is offset from the reference position:
 In the above, ``R_off`` should be either a ``float`` or a ``np.ndarray``.
 
 
+Numerical profile projections
++++++++++++++++++++++++++++++
+
+Projected profile
+-----------------
+
+If the projections of a given profile do not have analytical forms, they are 
+calculated by numerical integration. The projection of the profile along the 
+line of sight, :math:`\Sigma(R)`, can be calculated as follows:
+
+.. math::
+
+    \Sigma(R) = \int_{-\infty}^{+\infty} dr \rho(\sqrt{r^2+R^2})
+
+
+Cumulative projected profile
+----------------------------
+
+The enclosed (or cumulative) projected profile is then
+
+.. math::
+
+    \Sigma(<R) = \frac2{R^2}\int_0^R dr\,r\Sigma(r)
+
+
+Excess projected profile
+------------------------
+
+The excess projected profile is defined as
+
+.. math::
+
+    \Delta\Sigma(R) = \Sigma(<R) - \Sigma(R)
+
+This quantity is particularly useful in weak gravitational lensing studies, 
+where :math:`\Delta\Sigma(R)` is the excess surface density (ESD), which is 
+directly related to the weak lensing shape distortion, called *shear*, 
+:math:`\gamma`, through :math:`\gamma=\Delta\Sigma/\Sigma_\mathrm{c}`, where
+:math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing functionality <#lensing>`_).
+
+
 What follows are the descriptions of helper classes from which ``Profile`` inherits. These classes
 are not to be instantiated directly, but the description is separated for clarity.
 
 
 ----
 
+.. cosmology:
 
 ``BaseCosmo``: Cosmology
-------------------------
+++++++++++++++++++++++++
 
 The cosmology in which a ``Profile`` object is embedded is specified through the
 ``cosmo`` optional argument, which must be any ``astropy.cosmology.FLRW`` object.
@@ -73,9 +115,10 @@ of distances detailed below.
 
 ----
 
+.. _lensing:
 
 ``BaseLensing``: Gravitational lensing functionality
-----------------------------------------------------
+++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The ``Profile`` class inherits from the ``BaseLensing`` helper class,
 which implements quantities relevant for gravitational lensing analysis.
