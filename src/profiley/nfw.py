@@ -116,6 +116,7 @@ class BaseNFW(Profile):
         self_delta_c = self.delta_c.reshape(-1)
         # I found that this guess is good to within 20% typically
         c_guess = (self.overdensity/overdensity)**0.5 * self_c
+        # so we create a +/-50% search range to be sure
         c_rng = np.linspace(0.5*c_guess, 1.5*c_guess, n_guess_rng)
         delta_c_rng = self._f_delta_c(c_rng, overdensity)
         delta_c_diff = np.abs(delta_c_rng/self_delta_c - 1)
@@ -131,6 +132,7 @@ class BaseNFW(Profile):
             # if our best guess is at the edge then we don't want to
             # shrink the search range, but if we don't shrink it
             # progressively otherwise then we'll never improve our answer
+            # width=0.1 refers to a 10% search range
             if np.any(argmins == 0) or np.any(argmins == n_guess_rng-1):
                 width = 0.1
             else:
@@ -212,9 +214,9 @@ class GNFW(BaseNFW):
         super().__init__(
             mass, c, z, overdensity=overdensity, background=background,
             frame=frame, cosmo=cosmo, **kwargs)
-        self.alpha = self._define_array(alpha)
-        self.beta = self._define_array(beta)
-        self.gamma = self._define_array(gamma)
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
 
     ### main methods ###
 
