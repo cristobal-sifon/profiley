@@ -1,11 +1,18 @@
 test.ipynb
 
+# build
 *.egg-info
 build
 dist
 
+# backup
 *~
 *.save
+
+# (I)Python
 *.pyc
 __pycache__
 .ipynb_checkpoints
+
+# Sphinx
+_build
