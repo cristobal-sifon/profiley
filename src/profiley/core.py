@@ -132,9 +132,7 @@ class Profile(BaseLensing):
         """
         super().__init__(z, **kwargs)
         # check overdensity
-        if overdensity <= 0:
-            raise ValueError(
-                f'overdensity must be positive; received {overdensity}')
+        self._assert_overdensity(overdensity)
         self.overdensity = overdensity
         # for numerical integration -- perhaps these could be passed
         # in a single dictionary
@@ -167,6 +165,18 @@ class Profile(BaseLensing):
         return self._shape
 
     ### private methods ###
+
+    def _assert_overdensity(self, overdensity):
+        assert not np.iterable(overdensity), \
+            'parameter overdensity must be a scalar'
+        try:
+            overdensity / 1
+        except TypeError as err:
+            raise TypeError('parameter overdensity must be a number') from err
+        if overdensity <= 0:
+            raise ValueError(
+                f'overdensity must be positive; received {overdensity}')
+        return
 
     def _define_array(self, x):
         if not np.iterable(x):
