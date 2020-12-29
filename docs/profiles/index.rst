@@ -6,5 +6,6 @@ Implemented profiles
     :caption: Contents:
 
     nfw/index
+    einasto/index
     pressure/index
 
