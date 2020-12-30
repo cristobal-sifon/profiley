@@ -171,8 +171,9 @@ class Profile(BaseLensing):
 
     @inMpc
     @array
-    def surface_density(self, R, log_rmin: float=-10, log_rmax: float=6,
-                        integral_samples: int=200, single_R: bool=False):
+    def surface_density(self, R: np.ndarray, log_rmin: float=-10,
+                        log_rmax: float=6, integral_samples: int=200,
+                        single_R: bool=False):
         """Line of sight projected profile
 
         Parameters
@@ -228,9 +229,21 @@ class Profile(BaseLensing):
 
     @inMpc
     @array
-    def enclosed_surface_density(self, R, left_samples=100, resampling=20):
+    def enclosed_surface_density(self, R: np.ndarray, log_rmin: float=-10,
+                                 left_samples: int=100, resampling: int=20,
+                                 **kwargs):
         """Surface density enclosed within R, calculated numerically
 
+        Parameters
+        ----------
+        R : np.ndarray
+            positions at which to calculate the projected profile
+
+        Optional arguments
+        ------------------
+        log_rmin : float
+            lower limit for logspace resampling for integration. The
+            same value will be passed to ``surface_density``
         resampling : int
             number of samples into which each R-interval in the
             data will be re-sampled. For instance, if two adjacent
@@ -240,15 +253,23 @@ class Profile(BaseLensing):
                                       resampling, endpoint=False)
             (the endpoint will be added when sampling the following bin)
         left_samples : int
-            number of samples to use between `logleft` and `R[0]`,
-            with a logarithmic sampling
+            number of samples to use between log_rmin and the first
+            value of R, with a logarithmic sampling
 
+        Additional arguments will be passed to ``surface_density``
         """
-        logR = np.log10(R)
+        assert isinstance(left_samples, (int,np.integer)), \
+            'argument left_samples must be int, received' \
+            f' {left_samples} ({type(left_samples)})'
+        assert isinstance(resampling, (int,np.integer)), \
+            'argument resampling must be int, received' \
+            f' {resampling} ({type(resampling)})'
+        # for convenience
+        logR = np.log10(R[:,0])
         # resample R
         Ro = np.vstack(
             [np.zeros(R.shape[1]),
-             np.logspace(-10, logR[0], left_samples, endpoint=False)[:,None],
+             np.logspace(log_rmin, logR[0], left_samples, endpoint=False)[:,None],
              np.concatenate(
                 [np.logspace(logR[i-1], logR[i], resampling, endpoint=False)
                  for i in range(1, R.shape[0])])[:,None],
@@ -256,10 +277,11 @@ class Profile(BaseLensing):
             )
         j = np.arange(1+left_samples, Ro.shape[0], resampling)
         integ = cumtrapz(
-            Ro*self.surface_density(Ro), Ro, initial=0, axis=0)
+            Ro*self.surface_density(Ro, log_rmin=log_rmin, **kwargs),
+            Ro, initial=0, axis=0)
         return 2 * integ[j] / R**2
 
-    def excess_surface_density(self, R):
+    def excess_surface_density(self, R: np.ndarray, **kwargs):
         """Excess surface density at projected distance(s) R
 
         The excess surface density or ESD is the galaxy weak lensing
@@ -272,12 +294,11 @@ class Profile(BaseLensing):
         ----------
         R : float or array of float
             projected distance(s)
-        kwargs : dict, optional
-            passed to both `self.enclosed_surface_density` and
-            `self.surface_density`
+
+        Additional arguments are passed to ``enclosed_surface_density``
         """
-        return self.enclosed_surface_density(R) \
-            - self.surface_density(R)
+        return self.enclosed_surface_density(R, **kwargs) \
+            - self.surface_density(R, **kwargs)
 
     def offset(self, func, R, Roff, **kwargs):
         """Calcuate any profile with a reference point different
