@@ -15,7 +15,6 @@ from .helpers.lensing import BaseLensing
 
 
 class Profile(BaseLensing):
-
     """Profile object
 
     All profiles should inherit from ``Profile``
@@ -46,7 +45,7 @@ class Profile(BaseLensing):
     (in addition to attribute definitions). The last line is necessary
     to allow ``profiley`` to automatically handle arbitrary shapes,
     through the definition of a ``_shape`` attribute. Note that
-    ``set_shape`` takes only one argument (besides ``self``) - the
+    ``_set_shape`` takes only one argument (besides ``self``) - the
     *product* of the class arguments. That is, if the arguments are
     arrays, their dimensions must be such that a product can be carried
     out without any manipulation.
@@ -57,13 +56,13 @@ class Profile(BaseLensing):
     If the projection of this profile is analytical, any or all of the
     following methods can also be specified: ::
 
-        surface_density(self, R)
-        enclosed_surface_density(self, R)
-        excess_surface_density(self, R)
-        offset_profile3d(self, R, Roff)
-        offset_surface_density(self, R, Roff)
-        offset_enclosed_surface_density(self, R, Roff)
-        offset_excess_surface_density(self, R, Roff)
+        projected(self, R)
+        projected_cumulative(self, R)
+        projected_excess(self, R)
+        offset_profile(self, R, Roff)
+        offset_projected(self, R, Roff)
+        offset_projected_cumulative(self, R, Roff)
+        offset_projected_excess(self, R, Roff)
 
     If it does not have analytical expressions, these methods will also
     exist, but they will be calculated numerically, so they may be
@@ -77,7 +76,6 @@ class Profile(BaseLensing):
     which can be any ``astropy.cosmology.FLRW`` object.
 
     """
-
     def __init__(self, z=0, overdensity=500,
                  los_loglimit=6, nsamples_los=200, resampling=20,
                  logleft=-10, left_samples=100, **kwargs):
@@ -91,19 +89,6 @@ class Profile(BaseLensing):
             overdensity with respect to the background (does not apply
             to all Profile children; see each specific class for
             details)
-
-        Notes on numerical integration:
-        -------------------------------
-        The values for the integration parameters above have been
-        chosen as a compromise between speed and accuracy (<0.5%
-        for 0.01<R/Mpc<10) for a gNFW with alpha=1 (i.e., numerical
-        integration of an NFW profile). For different profiles you
-        may want to tune these differently.
-
-        NOTE: for the benchmarking we need a way to do the integration
-        that we know is accurate: should implement a function that uses
-        `quad` (which is more accurate but a lot slower than the
-        currently used `simps` integration).
         """
         super().__init__(z, **kwargs)
         # check overdensity
@@ -171,10 +156,9 @@ class Profile(BaseLensing):
 
     @inMpc
     @array
-    def surface_density(self, R: np.ndarray, log_rmin: float=-10,
-                        log_rmax: float=6, integral_samples: int=200,
-                        single_R: bool=False):
-        """Line of sight projected profile
+    def projected(self, R: np.ndarray, log_rmin=-10, log_rmax=6,
+                  integral_samples=200):
+        """Line of sight projected profile, calculated numerically
 
         Parameters
         ----------
@@ -188,18 +172,16 @@ class Profile(BaseLensing):
         integral_samples : int
             number of samples to generate for Simpson-rule integration
             of the projected profile
-        single_R : bool
-            whether we use a single R array to integrate all profiles
-            (assuming more than one are defined). At the moment this
-            parameter must be set to False
 
-        Notes
-        -----
-         -If `single_R=True`, both this function and
-            `enclosed_surface_density` work to about 10 Mpc within ~0.1%
-            (compared to the analytical NFW) but they go wild beyond
-            that, reaching 10% at 100 Mpc for the surface density
-            and 1% for the enclosed surface density.
+
+        Notes on numerical integration
+        ------------------------------
+         -The default values for the integration parameters give
+            numerical errors well below 0.1% over the range
+            R=[1e-5,100] Mpc, when comparing the numerical and
+            analytical implementations for an NFW profile (the
+            former can be obtained by defining a GNFW profile with
+            default kwargs)
         """
         assert log_rmin < log_rmax, \
             'argument log_rmin must be larger than log_rmax, received' \
@@ -207,32 +189,20 @@ class Profile(BaseLensing):
         assert integral_samples // 1 == integral_samples, \
             'argument integral_samples must be int, received' \
             f' {integral_samples} ({type(integral_samples)})'
-        assert isinstance(single_R, bool), \
-            f'argument single_R must be bool, received {single_R}' \
-            f' ({type(single_R)})'
-        # for now
-        assert not single_R, 'argument single_R must be False'
-        # Need to test single_R=True again. Perhaps it can speed
-        # things up a little without giving up much.
-        if single_R:
-            R_los = self.radius.max() * np.logspace(
-                log_rmin, log_rmax, integral_samples)
-            R = np.hypot(*np.meshgrid(R_los, R[0]))
-        else:
-            R_los = self.radius * np.logspace(
-                log_rmin, log_rmax, integral_samples)[:,None]
-            R = np.transpose(
-                [np.hypot(*np.meshgrid(R_los[:,i], R[:,0]))
-                 for i in range(R_los.shape[1])],
-                axes=(1,2,0))
+        R_los = np.logspace(log_rmin, log_rmax, integral_samples)[:,None]
+        R = np.transpose(
+            [np.hypot(*np.meshgrid(R_los[:,i], R[:,0]))
+             for i in range(R_los.shape[1])],
+            axes=(1,2,0))
         return 2 * simps(self.profile(R), R_los[None], axis=1)
 
     @inMpc
     @array
-    def enclosed_surface_density(self, R: np.ndarray, log_rmin: float=-10,
-                                 left_samples: int=100, resampling: int=20,
-                                 **kwargs):
-        """Surface density enclosed within R, calculated numerically
+    def projected_cumulative(self, R: np.ndarray, log_rmin: float=-10,
+                             left_samples: int=100, resampling: int=20,
+                             **kwargs):
+        """Cumulative projected profile within R, calculated
+        numerically
 
         Parameters
         ----------
@@ -243,7 +213,7 @@ class Profile(BaseLensing):
         ------------------
         log_rmin : float
             lower limit for logspace resampling for integration. The
-            same value will be passed to ``surface_density``
+            same value will be passed to ``self.projected``
         resampling : int
             number of samples into which each R-interval in the
             data will be re-sampled. For instance, if two adjacent
@@ -256,7 +226,16 @@ class Profile(BaseLensing):
             number of samples to use between log_rmin and the first
             value of R, with a logarithmic sampling
 
-        Additional arguments will be passed to ``surface_density``
+        Additional arguments will be passed to ``self.projected``
+
+        Notes on numerical integration
+        ------------------------------
+         -The default values for the integration parameters give
+            numerical errors well below 0.1% over the range
+            R=[1e-5,100] Mpc, when comparing the numerical and
+            analytical implementations for an NFW profile (the
+            former can be obtained by defining a GNFW profile with
+            default kwargs)
         """
         assert isinstance(left_samples, (int,np.integer)), \
             'argument left_samples must be int, received' \
@@ -277,28 +256,44 @@ class Profile(BaseLensing):
             )
         j = np.arange(1+left_samples, Ro.shape[0], resampling)
         integ = cumtrapz(
-            Ro*self.surface_density(Ro, log_rmin=log_rmin, **kwargs),
+            Ro*self.projected(Ro, log_rmin=log_rmin, **kwargs),
             Ro, initial=0, axis=0)
         return 2 * integ[j] / R**2
 
-    def excess_surface_density(self, R: np.ndarray, **kwargs):
-        """Excess surface density at projected distance(s) R
+    def projected_excess(self, R: np.ndarray, log_rmin=-10, log_rmax=6,
+                         integral_samples=200,
+                         left_samples=100, resampling=20):
+        """Cumulative projected profile file excess at projected
+        distance(s) R, defined as
 
-        The excess surface density or ESD is the galaxy weak lensing
-        observable in physical units, and is calculated as:
-            ESD(R) = Sigma(<R) - Sigma(R)
-        where Sigma(<R) is the average surface density within R and
-        Sigma(R) is the surface density at distance R
+            projected_excess(R) = projected_cumulative(R) - projected(R)
+
+        This profile is most commonly used as the galaxy weak lensing
+        *shear* observable, :math:`\gamma` where the projected excess
+        is referred to as the *excess surface density* (ESD or
+        :math:`\Delta\Sigma`),
+
+        .. math::
+
+            \Delta\Sigma(R) = \gamma\Sigma_\mathrm{c}
+
+        where :math:`\Sigma_\mathrm{c}` is the critical surface density
 
         Parameters
         ----------
         R : float or array of float
             projected distance(s)
 
-        Additional arguments are passed to ``enclosed_surface_density``
+        Optional arguments are passed to either ``self.projected`` or
+        ``self.projected_cumulative``
         """
-        return self.enclosed_surface_density(R, **kwargs) \
-            - self.surface_density(R, **kwargs)
+        s1 = self.projected_cumulative(
+            R, log_rmin=log_rmin, left_samples=left_samples,
+            resampling=resampling, log_rmax=log_rmax,
+            integral_samples=integral_samples)
+        s2 = self.projected(R, log_rmin=log_rmin, log_rmax=log_rmax,
+            integral_samples=integral_samples)
+        return s1 - s2
 
     def offset(self, func, R, Roff, **kwargs):
         """Calcuate any profile with a reference point different
@@ -331,39 +326,28 @@ class Profile(BaseLensing):
         theta = np.linspace(0, 2*np.pi, 500)
         theta1 = theta.reshape((500,*self._dimensions,1))
         x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta1))**0.5
-        print('x =', x.shape)
-        print('func =', func(x[0], **kwargs).shape)
         # looping slower but avoids memory issues
         off = np.array([simps(func(xi, **kwargs), theta, axis=0)
                         for xi in x])
         return off / (2*np.pi)
 
-    def offset_density(self, R, Roff):
+    def offset_profile(self, R, Roff, **kwargs):
+        """Alias for ``offset(profile, R, Roff, **kwargs)``"""
         return self.offset(self.profile, R, Roff)
 
-    def offset_surface_density(self, R, Roff, **kwargs):
-        """Surface density measured around a position offset from the
-        profile center
+    def offset_projected(self, R, Roff, **kwargs):
+        """Alias for ``offset(projected, R, Roff, **kwargs)``"""
+        return self.offset(self.projected, R, Roff, **kwargs)
 
-        Parameters
-        ----------
-        R : np.ndarray, shape (N,)
-            radii at which to calculate the offset surface density
-        Roff : np.ndarray, shape (M,)
-            offsets with respect to the profile center
+    def offset_projected_cumulative(self, R, Roff, **kwargs):
+        """Alias for ``offset(projected_cumulative, R, Roff,
+        **kwargs)``"""
+        return self.offset(self.projected_cumulative, R, Roff, **kwargs)
 
-        Returns
-        -------
-        offset_surface_density : np.ndarray
-            offset surface density
-        """
-        return self.offset(self.surface_density, R, Roff, **kwargs)
-
-    def offset_enclosed_surface_density(self, R, Roff, **kwargs):
-        return self.offset(self.enclosed_surface_density, R, Roff, **kwargs)
-
-    def offset_excess_surface_density(self, R, Roff, **kwargs):
-        return self.offset(self.excess_surface_density, R, Roff, **kwargs)
+    def offset_projected_excess(self, R, Roff, **kwargs):
+        """Alias for ``offset(projected_excess, R, Roff,
+        **kwargs)``"""
+        return self.offset(self.projected_excess, R, Roff, **kwargs)
 
     def _fourier(self, rmax=10, dr=0.1):
         """This is not working yet! Might just need to fall back to quad"""
@@ -381,8 +365,8 @@ class Profile(BaseLensing):
 
     # def twohalo(self, cosmo, bias, func, R, logm=np.logspace(12,16,41),
     #             bias_norm=1, **kwargs):
-    def twohalo(self, cosmo, offset_func, R, logm_2h=np.logspace(12,16,41),
-                z_2h=np.linspace(0,2,21), **kwargs):
+    def _twohalo(self, cosmo, offset_func, R, logm_2h=np.logspace(12,16,41),
+                 z_2h=np.linspace(0,2,21), **kwargs):
         """Calculate the two-halo term associated with the profile
 
         Parameters
@@ -412,14 +396,21 @@ class Profile(BaseLensing):
         # assert isinstance(bias, ccl.halos.HaloBias)
         # which function are we using?
         _valid_funcs = ('esd', 'kappa', 'sigma', 'convergence',
-                        'excess_surface_density', 'surface_density')
+                        'projected', 'projected_cumulative',
+                        'projected_excess',
+                        'enclosed_surface_density', 'excess_surface_density',
+                        'surface_density')
         if isinstance(offset_func, str):
             assert offset_func in _valid_funcs, \
-                f'offset_func must be one of f{_valid_funcs}'
-            if offset_func in ('sigma', 'surface_density'):
-                offset_func = self.offset_surface_density
-            elif offset_func in ('esd', 'excess_surface_density'):
-                offset_func = self.offset_excess_surface_density
+                f'offset_func must be one of {_valid_funcs}'
+            if offset_func in ('sigma', 'projected', 'surface_density'):
+                offset_func = self.offset_projected
+            elif offset_func in ('projected_cumulative',
+                                 'enclosed_surface_density'):
+                offset_func = self.offset_projected_cumulative
+            elif offset_func in ('esd', 'projected_excess',
+                                 'excess_surface_density'):
+                offset_func = self.offset_projected_excess
             elif offset_func in ('kappa', 'convergence'):
                 offset_func = self.offset_convergence
         else:
@@ -441,11 +432,38 @@ class Profile(BaseLensing):
         #     twoh = offset_func(R, R[:i+1], **kwargs)
         return
 
+    ### aliases for backward compatibility
+
+    def surface_density(self, *args, **kwargs):
+        """Alias for ``self.projected``"""
+        return self.projected(*args, **kwargs)
+
+    def enclosed_surface_density(self, *args, **kwargs):
+        """Alias for ``self.projected_cumulative``"""
+        return self.projected_cumulative(*args, **kwargs)
+
+    def excess_surface_density(self, *args, **kwargs):
+        """Alias for ``self.projected_excess``"""
+        return self.projected_excess(*args, **kwargs)
+
+    def offset_surface_density(self, *args, **kwargs):
+        """Alias for ``self.offset_projected``"""
+        return self.offset_projected(*args, **kwargs)
+
+    def offset_enclosed_surface_density(self, *args, **kwargs):
+        """Alias for ``self.offset_projected_cumulative``"""
+        return self.offset_projected_cumulative(*args, **kwargs)
+
+    def offset_excess_surface_density(self, *args, **kwargs):
+        """Alias for ``self.offset_projected_excess``"""
+        return self.offset_projected_excess(*args, **kwargs)
+
     ### auxiliary methods to test integration performance ###
 
     @inMpc
     @array
-    def _quad_surface_density(self, R):
+    def _quad_projected(self, R):
+        """Not yet implemented"""
         integrand = lambda r, Ro: self.profile((r**2+Ro**2)**0.5)
         return np.array([[quad(integrand, 0, np.inf, args=(Rij,))
                           for Rij in Ri] for Ri in R])
@@ -455,6 +473,9 @@ class Profile(BaseLensing):
     def _test_integration(self, R, output=None):
         """Test the fast-integration methods against the slow
         but accurate quad function
+
+        Not yet implemented
         """
-        qsd = self.quad_surface_density(R)
-        sd = self.surface_density(R)
+        qsd = self.quad_projected(R)
+        sd = self.projected(R)
+        return

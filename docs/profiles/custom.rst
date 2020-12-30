@@ -41,15 +41,19 @@ Profile projections
 If the projection of this profile is analytical, any or all of the
 following methods can also be specified: ::
 
-    surface_density(self, R)
-    enclosed_surface_density(self, R)
-    excess_surface_density(self, R)
-    offset_profile3d(self, R, Roff)
-    offset_surface_density(self, R, Roff)
-    offset_enclosed_surface_density(self, R, Roff)
-    offset_excess_surface_density(self, R, Roff)
+    projected(self, R, **kwargs)
+    projected_cumulative(self, R, **kwargs)
+    projected_excess(self, R, **kwargs)
+    offset_profile(self, R, Roff)
+    offset_projected(self, R, Roff, **kwargs)
+    offset_projected_cumulative(self, R, Roff, **kwargs)
+    offset_projected_excess(self, R, Roff, **kwargs)
 
-If it does not have analytical expressions, these methods will also
-exist, but they will be calculated numerically, so they may be
-somewhat slower depending on the precision required.
+Those projections that do not have analytical expressions will also exist in the 
+newly-built profile object, but they will be calculated numerically, so they may 
+be somewhat slower depending on the precision required.
+
+**Important:** For methods defined explicitly, the ``**kwargs`` constructor *is 
+mandatory*, to allow for easy integration with the generic numerical 
+implementations in the ``Profile`` base class.
 

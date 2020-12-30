@@ -39,10 +39,11 @@ For example, to obtain the surface density profile of an NFW profile we simply n
     nfw = NFW(mass, concentration, z)
 
     R = np.logspace(-1, 2, 10)
-    rho = nfw.surface_density(R)
+    rho = nfw.projected(R)
 
 ``profiley`` can handle ``np.ndarray`` objects of any shape, provided all the 
-arguments can be multiplied without manipulation. For instance,
+arguments can be multiplied without manipulation. For instance, methods in an 
+``nfw`` object defined as follows
 
 .. code-block:: python
 
@@ -52,8 +53,7 @@ arguments can be multiplied without manipulation. For instance,
 
     nfw = NFW(mass, concentration, z)
 
-will produce an array of profiles with shape ``(R.size,5,3,11)``.
-
+will produce arrays of profiles with shape ``(R.size,5,3,11)``.
 
 
 License

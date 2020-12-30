@@ -21,6 +21,8 @@ The signature is
     from profiley.nfw import NFW
     NFW(mass, concentration, z, **kwargs)
 
+where ``kwargs`` are passed to ``BaseLensing`` and ``BaseCosmo``. See
+`Inheritance <../profile.html#inheritance>`_.
 
 Generalized NFW profile
 +++++++++++++++++++++++
@@ -67,3 +69,18 @@ The signature is
     from profiley.nfw import TNFW
     TNFW(mass, concentration, z, tau, exp, **kwargs)
 
+
+Hernquist profile
++++++++++++++++++
+
+The ``Hernquist`` class implements the `Hernquist (1990)
+<https://ui.adsabs.harvard.edu/abs/1990ApJ...356..359H/abstract>`_ profile,
+which is a special case of the GNFW profile with :math:`\alpha=1`,
+:math:`\beta=4`, and :math:`\gamma=1`.
+
+The signature is
+
+.. code-block::
+
+    from profiley.nfw import Hernquist
+    Hernquist(mass, concentration, z, **kwargs)

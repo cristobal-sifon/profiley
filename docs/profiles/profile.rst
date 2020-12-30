@@ -3,51 +3,44 @@ The ``Profile`` base class
 
 All profiles in ``profiley`` inherit from the ``Profile`` base class, which 
 implements numerical calculation of all methods, starting from a ``profile`` 
-method in which the three-dimensional profile is calculated. The ``Profile``
-class allows for all profiles to have a unique API:
+method in which the three-dimensional profile is calculated. The ``Profile`` 
+class allows for all profiles to have a unique API, described in the following.
 
-+--------------------------------------------------------------------------------------------------------------------------------------+
-| Methods defined in this class                                                                                                        |
-+=================================+====================================================================================================+
-| ``enclosed_surface_density(R)`` | cumulative two-dimensional projected profile                                                       |
-+---------------------------------+----------------------------------------------------------------------------------------------------+
-| ``excess_surface_density(R)``   | difference between the two above (most commonly used as the weak gravitational lensing observable) |
-+---------------------------------+----------------------------------------------------------------------------------------------------+
-| ``profile(R)``                  | three-dimensional profile                                                                          |
-+---------------------------------+----------------------------------------------------------------------------------------------------+
-| ``surface_density(R)``          | two-dimensional projected profile                                                                  |
-+---------------------------------+----------------------------------------------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------------------+
+| Methods defined in this class                                                                               |
++=======================================+=====================================================================+
+| ``profile(R)``                        | three-dimensional profile                                           |
++---------------------------------------+---------------------------------------------------------------------+
+| ``projected(R, **kwargs)``            | Line-of-sight projected profile                                     |
++---------------------------------------+---------------------------------------------------------------------+
+| ``projected_cumulative(R, **kwargs)`` | Line-of-sight projected cumulative profile                          |
++---------------------------------------+---------------------------------------------------------------------+
+| ``projected_excess(R, **kwargs)``     | difference between ``projected_cumulative(R)`` and ``projected(R)`` |
++---------------------------------------+---------------------------------------------------------------------+
 
-Where available, these methods are implemented using the analytical expressions;
-otherwise they are calculated numerically. All projected profiles also have a
-variant where the profile is offset from the reference position:
-
-+-----------------------------------------------+
-| Additional methods                            |
-+===============================================+
-| ``offset_enclosed_surface_density(R, R_off)`` |
-+-----------------------------------------------+
-| ``offset_excess_surface_density(R, R_off)``   |
-+-----------------------------------------------+
-| ``offset_surface_density(R, R_off)``          |
-+-----------------------------------------------+
-
-In the above, ``R_off`` should be either a ``float`` or a ``np.ndarray``.
+where ``R`` are the radii at which to return the profiles. Where available, 
+these methods are implemented using the analytical expressions; otherwise they 
+are calculated numerically. Additional arguments absorbed in ``kwargs`` relate 
+to the precision (and speed) of numerical integration. See below.
 
 
 Numerical profile projections
 +++++++++++++++++++++++++++++
 
+If the projections of a given profile do not have analytical forms, they are 
+calculated by numerical integration, using ``scipy.integrate.simps``.
+
 Projected profile
 -----------------
 
-If the projections of a given profile do not have analytical forms, they are 
-calculated by numerical integration. The projection of the profile along the 
+The projection of the profile along the 
 line of sight, :math:`\Sigma(R)`, can be calculated as follows:
 
 .. math::
 
     \Sigma(R) = 2\int_0^{+\infty} dr \rho(\sqrt{r^2+R^2})
+
+
 
 
 Cumulative projected profile
@@ -76,6 +69,45 @@ directly related to the weak lensing shape distortion, called *shear*,
 :math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing functionality <#lensing>`_).
 
 
+Offset profiles
+---------------
+
+It is also possible to calculate a given profile projection when the reference 
+point is not the center of the profile itself. If the projected distance between 
+the reference point and the center of the profile is :math:`R_\mathrm{off}`, 
+then the measured projected profile is
+
+.. math::
+
+    \Sigma_\mathrm{off}(R,R_\mathrm{off}) = \frac1{2\pi}
+        \int_0^{2\pi}d\theta\,
+            \Sigma\left(
+                \sqrt{R_\mathrm{off}^2 + R^2 + 2RR_\mathrm{off}\cos\theta}
+            \right)
+
+and analogously for other projections. These offset profiles are calculated 
+numerically in the following methods:
+
++-----------------------------------------------------+
+| ``offset_profile(R, R_off, **kwargs)``              |
++-----------------------------------------------------+
+| ``offset_projected(R, R_off, **kwargs)``            |
++-----------------------------------------------------+
+| ``offset_projected_cumulative(R, R_off, **kwargs)`` |
++-----------------------------------------------------+
+| ``offset_projected_excess(R, R_off, **kwargs)``     |
++-----------------------------------------------------+
+
+In the above, ``R_off`` should be either a ``float`` or a 1-d ``np.ndarray``.
+
+
+----
+
+.. inheritance:
+
+Inheritance
++++++++++++
+
 What follows are the descriptions of helper classes from which ``Profile`` inherits. These classes
 are not to be instantiated directly, but the description is separated for clarity.
 
@@ -85,7 +117,7 @@ are not to be instantiated directly, but the description is separated for clarit
 .. cosmology:
 
 ``BaseCosmo``: Cosmology
-++++++++++++++++++++++++
+------------------------
 
 The cosmology in which a ``Profile`` object is embedded is specified through the
 ``cosmo`` optional argument, which must be any ``astropy.cosmology.FLRW`` object.
@@ -118,7 +150,7 @@ of distances detailed below.
 .. _lensing:
 
 ``BaseLensing``: Gravitational lensing functionality
-++++++++++++++++++++++++++++++++++++++++++++++++++++
+----------------------------------------------------
 
 The ``Profile`` class inherits from the ``BaseLensing`` helper class,
 which implements quantities relevant for gravitational lensing analysis.

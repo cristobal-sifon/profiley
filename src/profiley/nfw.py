@@ -294,8 +294,8 @@ class NFW(BaseNFW):
 
     @inMpc
     @array
-    def surface_density(self, R):
-        """Surface density at distance(s) R"""
+    def projected(self, R, **kwargs):
+        """Analytical projected NFW at distance(s) R"""
         x = R / self.rs
         s = np.ones_like(x) / 3
         s[x == 0] = 0
@@ -311,8 +311,8 @@ class NFW(BaseNFW):
 
     @inMpc
     @array
-    def enclosed_surface_density(self, R):
-        """Surface density enclosed within R"""
+    def projected_cumulative(self, R, **kwargs):
+        """Analytical cumulative projected NFW profile"""
         x = R / self.rs
         s = np.ones_like(x) + np.log(0.5)
         s[x == 0] = 0

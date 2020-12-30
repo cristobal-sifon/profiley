@@ -16,6 +16,8 @@
 
 import sphinx_rtd_theme
 
+import profiley
+
 # -- Project information -----------------------------------------------------
 
 project = 'profiley'
@@ -23,7 +25,7 @@ copyright = '2020, Cristóbal Sifón'
 author = 'Cristóbal Sifón'
 
 # The full version, including alpha/beta/rc tags
-release = '1.2.1'
+release = profiley.__version__
 
 
 # -- General configuration ---------------------------------------------------
