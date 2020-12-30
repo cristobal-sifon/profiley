@@ -345,7 +345,7 @@ class TNFW(BaseNFW):
     .. math::
 
         \rho(r) = \frac{\delta_\mathrm{c}\rho_\mathrm{bg}}{x(1+x)^2}
-                    \left(\frac{\tau^2}{\tau^2+x^2}\right)^{\mathrm{exp}}
+                    \left(\frac{\tau^2}{\tau^2+x^2}\right)^{\mathrm{eta}}
 
     with
 
@@ -362,7 +362,7 @@ class TNFW(BaseNFW):
     the truncation radius in units of the scale radius.
 
     Analytical expressions for projected profiles have been derived by
-    Baltz, Marshall & Oguri for the cases of ``exp={1,2}``. Here the
+    Baltz, Marshall & Oguri for the cases of ``eta={1,2}``. Here the
     projected profiles are calculated numerically.
 
     Parameters
@@ -376,18 +376,18 @@ class TNFW(BaseNFW):
     -------------------
     tau : float or np.ndarray
         truncation radius, in units of the scale radius
-    exp : float or np.ndarray
+    eta : float or np.ndarray
         exponent of the decay beyond the truncation radius. Set to zero
         to recover regular NFW
 
     For additional optional parameters see ``NFW``
     """
 
-    def __init__(self, mass, c, z, tau=1, exp=1, **kwargs):
-        self._set_shape(mass*c*z*tau*exp)
+    def __init__(self, mass, c, z, tau=1, eta=1, **kwargs):
+        self._set_shape(mass*c*z*tau*eta)
         super().__init__(mass, c, z, **kwargs)
         self.tau = tau
-        self.exp = exp
+        self.eta = eta
 
     ### main methods ###
 
@@ -396,7 +396,7 @@ class TNFW(BaseNFW):
     def profile(self, r):
         x = r / self.rs
         return self.delta_c * self.rho_bg / (x * (1+x)**2) \
-            * (self.tau**2 / (self.tau**2 + x**2))**self.exp
+            * (self.tau**2 / (self.tau**2 + x**2))**self.eta
 
 
 class Hernquist(GNFW):
