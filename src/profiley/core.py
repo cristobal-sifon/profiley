@@ -92,31 +92,6 @@ class Profile(BaseLensing):
             to all Profile children; see each specific class for
             details)
 
-        Optional arguments for numerical integration
-        for the projected profiles (see notes below)
-        --------------------------------------------
-        los_loglimit : int
-            log10-limit for the line-of-sight integration, in units
-            of the radius of the cluster (e.g., r200, r500, etc,
-            as defined when the object was initialized)
-        nsamples_los : int
-            number of samples for the line-of-sight integrals
-        resampling : int
-            number of samples into which each R-interval in the
-            data will be re-sampled. For instance, if two adjacent
-            data points are at Rbin=0.1,0.2 then for the integration
-            they will be replaced by
-                newRbin = np.logspace(np.log10(0.1), np.log10(0.2),
-                                      resampling, endpoint=False)
-            (the endpoint will be added when sampling the following bin)
-        logleft : int
-            log10-starting point for the integration of the enclosed
-            surface density, in units of the cluster radius. The closer
-            to zero this number the better
-        left_samples : int
-            number of samples to use between `logleft` and `R[0]`,
-            with a logarithmic sampling
-
         Notes on numerical integration:
         -------------------------------
         The values for the integration parameters above have been
@@ -196,54 +171,92 @@ class Profile(BaseLensing):
 
     @inMpc
     @array
-    def surface_density(self, R, single_R=False):
-        """Surface density at radius R, calculated by numerical integration
+    def surface_density(self, R, log_rmin: float=-10, log_rmax: float=6,
+                        integral_samples: int=200, single_R: bool=False):
+        """Line of sight projected profile
 
-        `single_R` refers to whether we use a single R array
-        to integrate all profiles (assuming more than one were defined).
-        If True, it seems both this function and `enclosed_surface_density`
-        work to about 10 Mpc within ~0.1% (compared to the analytical NFW)
-        but they go wild beyond that, reaching 10% at 100 Mpc for the
-        surface density and 1% for the enclosed surface density.
+        Parameters
+        ----------
+        R : np.ndarray
+            positions at which to calculate the projected profile
 
-        NOTE: the above seems to be true also for multiple R (which I'm
-        not sure I'd expect). More strangely, `single_R=True` now doesn't
-        seem to work
+        Optional arguments
+        ------------------
+        log_rmin, log_rmax : float
+            lower and upper limits for logspace resampling for integration
+        integral_samples : int
+            number of samples to generate for Simpson-rule integration
+            of the projected profile
+        single_R : bool
+            whether we use a single R array to integrate all profiles
+            (assuming more than one are defined). At the moment this
+            parameter must be set to False
+
+        Notes
+        -----
+         -If `single_R=True`, both this function and
+            `enclosed_surface_density` work to about 10 Mpc within ~0.1%
+            (compared to the analytical NFW) but they go wild beyond
+            that, reaching 10% at 100 Mpc for the surface density
+            and 1% for the enclosed surface density.
         """
+        assert log_rmin < log_rmax, \
+            'argument log_rmin must be larger than log_rmax, received' \
+            f' {log_rmin,log_rmax}'
+        assert integral_samples // 1 == integral_samples, \
+            'argument integral_samples must be int, received' \
+            f' {integral_samples} ({type(integral_samples)})'
+        assert isinstance(single_R, bool), \
+            f'argument single_R must be bool, received {single_R}' \
+            f' ({type(single_R)})'
+        # for now
+        assert not single_R, 'argument single_R must be False'
         # Need to test single_R=True again. Perhaps it can speed
         # things up a little without giving up much.
         if single_R:
-            Rlos = self.radius.max() * np.logspace(
-                -10, self.los_loglimit, self.nsamples_los)
-            R = np.hypot(*np.meshgrid(Rlos, R[0]))
+            R_los = self.radius.max() * np.logspace(
+                log_rmin, log_rmax, integral_samples)
+            R = np.hypot(*np.meshgrid(R_los, R[0]))
         else:
-            Rlos = self.radius * np.logspace(
-                -10, self.los_loglimit, self.nsamples_los)[:,None]
+            R_los = self.radius * np.logspace(
+                log_rmin, log_rmax, integral_samples)[:,None]
             R = np.transpose(
-                [np.hypot(*np.meshgrid(Rlos[:,i], R[:,0]))
-                 for i in range(Rlos.shape[1])],
+                [np.hypot(*np.meshgrid(R_los[:,i], R[:,0]))
+                 for i in range(R_los.shape[1])],
                 axes=(1,2,0))
-        return 2 * simps(self.profile(R), Rlos[None], axis=1)
+        return 2 * simps(self.profile(R), R_los[None], axis=1)
 
     @inMpc
     @array
-    def enclosed_surface_density(self, R):
-        """Surface density enclosed within R, calculated numerically"""
+    def enclosed_surface_density(self, R, left_samples=100, resampling=20):
+        """Surface density enclosed within R, calculated numerically
+
+        resampling : int
+            number of samples into which each R-interval in the
+            data will be re-sampled. For instance, if two adjacent
+            data points are at Rbin=0.1,0.2 then for the integration
+            they will be replaced by
+                newRbin = np.logspace(np.log10(0.1), np.log10(0.2),
+                                      resampling, endpoint=False)
+            (the endpoint will be added when sampling the following bin)
+        left_samples : int
+            number of samples to use between `logleft` and `R[0]`,
+            with a logarithmic sampling
+
+        """
         logR = np.log10(R)
         # resample R
-        Ro = np.vstack([
-            np.zeros(R.shape[1]),
-            np.logspace(-10, logR[0], self.left_samples,
-                        endpoint=False)[:,None],
-            np.concatenate(
-                [np.logspace(logR[i-1], logR[i], self.resampling,
-                             endpoint=False)
+        Ro = np.vstack(
+            [np.zeros(R.shape[1]),
+             np.logspace(-10, logR[0], left_samples, endpoint=False)[:,None],
+             np.concatenate(
+                [np.logspace(logR[i-1], logR[i], resampling, endpoint=False)
                  for i in range(1, R.shape[0])])[:,None],
-            R.max()*np.ones(R.shape[1])
-            ])
-        j = np.arange(1+self.left_samples, Ro.shape[0], self.resampling)
-        integ = cumtrapz(Ro*self.surface_density(Ro),
-                         Ro, initial=0, axis=0)
+             R.max()*np.ones(R.shape[1])]
+            )
+        j = np.arange(1+left_samples, Ro.shape[0], resampling)
+        integ = cumtrapz(
+            Ro*self.surface_density(Ro), Ro, initial=0, axis=0)
         return 2 * integ[j] / R**2
 
     def excess_surface_density(self, R):

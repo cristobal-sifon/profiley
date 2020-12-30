@@ -3,7 +3,7 @@ from functools import wraps
 import numpy as np
 
 
-def array(f, idx=1):
+def array(f):
     """Turn the first argument (assumed to be `R`) into a 2-d array
     to allow multiple profiles to be defined in one call
     """
