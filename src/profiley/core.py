@@ -295,7 +295,7 @@ class Profile(BaseLensing):
             integral_samples=integral_samples)
         return s1 - s2
 
-    def offset(self, func, R, Roff, **kwargs):
+    def offset(self, func, R, Roff, theta_samples=360, **kwargs):
         """Calcuate any profile with a reference point different
         from its center
 
@@ -308,23 +308,30 @@ class Profile(BaseLensing):
         Roff : np.ndarray, shape (M,)
             offsets with respect to the profile center
 
+        Optional parameters
+        -------------------
+        theta_samples : int
+            number of samples for the angular integral from 0 to 2*pi
+        kwargs : dict
+            arguments to pass to ``func``
+
         Returns
         -------
-        offset : np.ndarray
+        offset : np.ndarray, shape (M,N,*self.shape)
             offset profile
-
-        Notes
-        -----
-        kwargs are passed to ``func``
         """
+        if not isinstance(theta_samples, (int,np.integer)):
+            raise TypeError(
+                'argument theta_samples must be int, received' \
+                f' {theta_samples} ({type(theta_samples)})'
         if not np.iterable(Roff):
             Roff = np.array([Roff])
         assert len(Roff.shape) == 1, 'argument Roff must be 1d'
         # can't get this to work using the @array decorator
         R = R.reshape((R.size,*self._dimensions))
         Roff = Roff.reshape((Roff.size,*self._dimensions,1,1))
-        theta = np.linspace(0, 2*np.pi, 500)
-        theta1 = theta.reshape((500,*self._dimensions,1))
+        theta = np.linspace(0, 2*np.pi, theta_samples)
+        theta1 = theta.reshape((theta_samples,*self._dimensions,1))
         x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta1))**0.5
         # looping slower but avoids memory issues
         off = np.array([simps(func(xi, **kwargs), theta, axis=0)
