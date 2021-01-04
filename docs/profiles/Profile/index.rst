@@ -23,24 +23,61 @@ these methods are implemented using the analytical expressions; otherwise they
 are calculated numerically. Additional arguments absorbed in ``kwargs`` relate 
 to the precision (and speed) of numerical integration. See below.
 
+**Offset profiles**
+
+It is also possible to calculate a given profile projection when the reference 
+point is not the center of the profile itself. If the projected distance between 
+the reference point and the center of the profile is :math:`R_\mathrm{off}`, 
+then the measured projected profile is
+
+.. math::
+
+    \Sigma_\mathrm{off}(R,R_\mathrm{off}) = \frac1{2\pi}
+        \int_0^{2\pi}d\theta\,
+            \Sigma\left(
+                \sqrt{R_\mathrm{off}^2 + R^2 + 2RR_\mathrm{off}\cos\theta}
+            \right)
+
+and analogously for other projections. These offset profiles are calculated 
+numerically using the ``offset`` wrapper:
+
+.. code-block::
+
+    offset(func, R, R_off, theta_samples=360, **kwargs)
+
+where ``func`` is any of the methods above, ``R_off`` is either a ``float`` or a 
+1-d ``np.ndarray``, and ``theta_samples`` sets the precision for the angular 
+integral. Each of the projected profiles is implemented in the following 
+convenience functions:
+
++-----------------------------------------------------+
+| ``offset_profile(R, R_off, **kwargs)``              |
++-----------------------------------------------------+
+| ``offset_projected(R, R_off, **kwargs)``            |
++-----------------------------------------------------+
+| ``offset_projected_cumulative(R, R_off, **kwargs)`` |
++-----------------------------------------------------+
+| ``offset_projected_excess(R, R_off, **kwargs)``     |
++-----------------------------------------------------+
+
+
+.. numerical:
 
 Numerical profile projections
 +++++++++++++++++++++++++++++
 
-If the projections of a given profile do not have analytical forms, they are 
+If the projections of a given profile do not have analytical forms, they are
 calculated by numerical integration, using ``scipy.integrate.simps``.
 
 Projected profile
 -----------------
 
-The projection of the profile along the 
+The projection of the profile along the
 line of sight, :math:`\Sigma(R)`, can be calculated as follows:
 
 .. math::
 
     \Sigma(R) = 2\int_0^{+\infty} dr \rho(\sqrt{r^2+R^2})
-
-
 
 
 Cumulative projected profile
@@ -62,46 +99,18 @@ The excess projected profile is defined as
 
     \Delta\Sigma(R) = \Sigma(<R) - \Sigma(R)
 
-This quantity is particularly useful in weak gravitational lensing studies, 
-where :math:`\Delta\Sigma(R)` is the excess surface density (ESD), which is 
-directly related to the weak lensing shape distortion, called *shear*, 
-:math:`\gamma`, through :math:`\gamma=\Delta\Sigma/\Sigma_\mathrm{c}`, where
-:math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing functionality <#lensing>`_).
+This quantity is particularly useful in weak gravitational lensing studies,
+where :math:`\Delta\Sigma(R)` is the excess surface density (ESD), which is
+directly related to the weak lensing shape distortion, called *shear*,
+:math:`\gamma`, through :math:`\gamma=\Delta\Sigma/\Sigma_\mathrm{c}`, where 
+:math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing
+functionality <#lensing>`_).
 
-
-Offset profiles
----------------
-
-It is also possible to calculate a given profile projection when the reference 
-point is not the center of the profile itself. If the projected distance between 
-the reference point and the center of the profile is :math:`R_\mathrm{off}`, 
-then the measured projected profile is
-
-.. math::
-
-    \Sigma_\mathrm{off}(R,R_\mathrm{off}) = \frac1{2\pi}
-        \int_0^{2\pi}d\theta\,
-            \Sigma\left(
-                \sqrt{R_\mathrm{off}^2 + R^2 + 2RR_\mathrm{off}\cos\theta}
-            \right)
-
-and analogously for other projections. These offset profiles are calculated 
-numerically in the following methods:
-
-+-----------------------------------------------------+
-| ``offset_profile(R, R_off, **kwargs)``              |
-+-----------------------------------------------------+
-| ``offset_projected(R, R_off, **kwargs)``            |
-+-----------------------------------------------------+
-| ``offset_projected_cumulative(R, R_off, **kwargs)`` |
-+-----------------------------------------------------+
-| ``offset_projected_excess(R, R_off, **kwargs)``     |
-+-----------------------------------------------------+
-
-In the above, ``R_off`` should be either a ``float`` or a 1-d ``np.ndarray``.
-
-
-----
+Several optional arguments allow the user to find their own sweet-spot in the 
+trade-off between precision and execution time. Using the default parameters the 
+precision of the numerical calculations for an NFW profile is better than 0.1% 
+at all radii, as demonstrated in the `Examples 
+<https://github.com/cristobal-sifon/profiley/blob/master/examples/nfw/nfw_single.ipynb>`_.
 
 .. inheritance:
 
@@ -112,7 +121,6 @@ What follows are the descriptions of helper classes from which ``Profile`` inher
 are not to be instantiated directly, but the description is separated for clarity.
 
 
-----
 
 .. cosmology:
 
@@ -144,8 +152,6 @@ of distances detailed below.
 | ``rho_bg``           | ``np.ndarray`` | alias for either ``critical_density`` or ``mean_density`` depending on the ``background`` attribute |
 +----------------------+----------------+-----------------------------------------------------------------------------------------------------+
 
-
-----
 
 .. _lensing:
 

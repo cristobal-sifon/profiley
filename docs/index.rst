@@ -66,7 +66,7 @@ License
     :maxdepth: 2
     :caption: Contents:
 
-    profiles/profile
+    profiles/Profile/index
     profiles/index
     profiles/custom
     LICENSE
