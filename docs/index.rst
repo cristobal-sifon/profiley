@@ -80,6 +80,7 @@ License
 
     profiles/Profile/index
     profiles/index
+    filtering
     profiles/custom
     LICENSE
 
