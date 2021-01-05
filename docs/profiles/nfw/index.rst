@@ -4,6 +4,8 @@ NFW-like profiles
 ``profiley`` implements the most common NFW-like profiles, all of which are 
 under the ``nfw`` module.
 
+.. nfw:
+
 NFW profile
 +++++++++++
 
@@ -23,6 +25,9 @@ The signature is
 
 where ``kwargs`` are passed to ``BaseLensing`` and ``BaseCosmo``. See
 `Inheritance <../profile.html#inheritance>`_.
+
+
+.. gnfw:
 
 Generalized NFW profile
 +++++++++++++++++++++++
@@ -44,6 +49,8 @@ The signature is
 Using default values for ``alpha``, ``beta``, and ``gamma`` results in the 
 regular NFW profile.
 
+
+.. tnfw:
 
 Truncated NFW profile
 +++++++++++++++++++++
@@ -67,8 +74,10 @@ The signature is
 .. code-block::
 
     from profiley.nfw import TNFW
-    TNFW(mass, concentration, z, tau, exp, **kwargs)
+    TNFW(mass, concentration, z, tau, eta, **kwargs)
 
+
+.. hernquist:
 
 Hernquist profile
 +++++++++++++++++

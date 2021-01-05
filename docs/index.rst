@@ -42,8 +42,8 @@ For example, to obtain the surface density profile of an NFW profile we simply n
     rho = nfw.projected(R)
 
 ``profiley`` can handle ``np.ndarray`` objects of any shape, provided all the 
-arguments can be multiplied without manipulation. For instance, methods in an 
-``nfw`` object defined as follows
+arguments can be multiplied without manipulation. For instance, we can define an
+``nfw`` object as follows
 
 .. code-block:: python
 
@@ -53,7 +53,19 @@ arguments can be multiplied without manipulation. For instance, methods in an
 
     nfw = NFW(mass, concentration, z)
 
-will produce arrays of profiles with shape ``(R.size,5,3,11)``.
+whose `profile methods <profiles/Profile/index.html>`_ will produce arrays of 
+profiles with shape ``(R.size,5,3,11)``.
+
+Available profiles
+++++++++++++++++++
+
+The following profiles are available in ``profiley``:
+
+* `NFW <profiles/nfw/index.html#nfw-profile>`_
+* `Generalized NFW <profiles/nfw/index.html#generalized-nfw-profile>`_
+* `Truncated NFW <profiles/nfw/index.html#truncated-nfw-profile>`_
+* `Hernquist <profiles/nfw/index.html#hernquist-profile>`_
+* `Einasto <profiles/einasto/index.html>`_
 
 
 License

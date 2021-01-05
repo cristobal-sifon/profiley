@@ -4,7 +4,8 @@ The ``Profile`` base class
 All profiles in ``profiley`` inherit from the ``Profile`` base class, which 
 implements numerical calculation of all methods, starting from a ``profile`` 
 method in which the three-dimensional profile is calculated. The ``Profile`` 
-class allows for all profiles to have a unique API, described in the following.
+class allows for all profiles to have a unique, simple API. See all implemented
+profiles `here <../index.html>`_. 
 
 +-------------------------------------------------------------------------------------------------------------+
 | Methods defined in this class                                                                               |
@@ -106,6 +107,9 @@ directly related to the weak lensing shape distortion, called *shear*,
 :math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing
 functionality <#lensing>`_).
 
+Precision of numerical integration
+----------------------------------
+
 Several optional arguments allow the user to find their own sweet-spot in the 
 trade-off between precision and execution time. Using the default parameters the 
 precision of the numerical calculations for an NFW profile is better than 0.1% 
@@ -117,8 +121,9 @@ at all radii, as demonstrated in the `Examples
 Inheritance
 +++++++++++
 
-What follows are the descriptions of helper classes from which ``Profile`` inherits. These classes
-are not to be instantiated directly, but the description is separated for clarity.
+What follows are the descriptions of helper classes from which ``Profile`` 
+inherits. These classes are not to be instantiated directly, but the description 
+of attributes and methods defined within these classes is separated for clarity.
 
 
 
