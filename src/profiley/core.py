@@ -323,7 +323,7 @@ class Profile(BaseLensing):
         if not isinstance(theta_samples, (int,np.integer)):
             raise TypeError(
                 'argument theta_samples must be int, received' \
-                f' {theta_samples} ({type(theta_samples)})'
+                f' {theta_samples} ({type(theta_samples)})')
         if not np.iterable(Roff):
             Roff = np.array([Roff])
         assert len(Roff.shape) == 1, 'argument Roff must be 1d'
