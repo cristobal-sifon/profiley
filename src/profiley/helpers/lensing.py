@@ -91,8 +91,8 @@ class BaseLensing(BaseCosmo):
         if z_s is None:
             b = self.Dls / self.Ds
         else:
-            b = (self.cosmo.angular_diameter_distance_z1z2(self.z, zs).to(u.Mpc) \
-                 / self.cosmo.angular_diameter_distance(zs).to(u.Mpc)).value
+            b = (self.cosmo.angular_diameter_distance_z1z2(self.z, z_s).to(u.Mpc) \
+                 / self.cosmo.angular_diameter_distance(z_s).to(u.Mpc)).value
         return np.max([np.zeros_like(b), b])
 
     #@float_args
