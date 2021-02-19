@@ -6,22 +6,13 @@ import os
 import pyccl as ccl
 from scipy.integrate import quad, IntegrationWarning
 from scipy.interpolate import UnivariateSpline
-from time import time
+from time import process_time, time
 import warnings
 
 from . import hankel
 
 
 warnings.filterwarnings('ignore', category=IntegrationWarning)
-
-"""
-class ProfilesFile:
-
-    def __init__(self, filename):
-        self.filename = filename
-
-    def 
-"""
 
 
 def load_profiles(filename, x=None, precision=2, force_match_all=True):
@@ -123,8 +114,7 @@ def load_profiles(filename, x=None, precision=2, force_match_all=True):
     return profiles, r, x1, x2, info
 
 
-#def power2xi(k, Pgm, R):
-def power2xi(lnPgm_lnk, R):
+def power2xi(lnPk_lnk, R):
     """Calculate the correlation function using the Hankel
     transform of the power spectrum
 
@@ -138,24 +128,20 @@ def power2xi(lnPgm_lnk, R):
 
     Parameters
     ----------
-    lnPgm_lnk : `scipy.interpolate.interp1d` object (or equivalent)
-        function to calculate the natural log of the power spectrum
-        given the natural log of the wavenumber
+    lnPk_lnk : `scipy.interpolate.interp1d` object (or equivalent)
+        function to calculate the natural log of the matter power
+        spectrum given the natural log of the wavenumber
+    R : ndarray, 1-dimensional
+        radii at which to calculate the correlation function
     """
-    #assert len(k.shape) == 1, 'k must be 1-d'
-    assert len(np.squeeze(R).shape) == 1, 'R must be 1-d'
-    result = np.zeros(R.shape)
+    assert len(R.shape) == 1, 'R must be 1-d'
     h = hankel.SphericalHankelTransform(0,10000,0.00001)
-    for i in range(result.size):
-        integ = lambda x: \
-            np.exp(lnPgm_lnk(np.log(x/R[i]))) * (x**2) / (2*np.pi**2)
+    result = np.zeros(R.size)
+    for i, Ri in enumerate(R):
+        integ = lambda x: np.exp(lnPk_lnk(np.log(x/Ri))) * x*x \
+            / (2*np.pi**2)
         result[i] = h.transform(integ)[0]
     return result / R**3
-    #xi = np.zeros((z.size,m.size,Rxi.size))
-    #for i in range(z.size):
-        #for j in range(m.size):
-            #lnPgm_lnk = interp1d(lnk, lnPgm[i,j])
-            #xi[i,j] = lss.power2xi(lnPgm_lnk, Rxi)
 
 
 def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
@@ -331,14 +317,15 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
     to = time()
     if threads == 1:
         sigma = np.array(
-            [_xi2sig_single(*args) for args in zip(R, ln_rxi, ln_1plusxi)])
+            [_xi2sig_single(*args)
+             for args in zip(R, ln_rxi, ln_1plusxi)])
     # run in parallel
     else:
         pool = mp.Pool(threads)
         out = [[]] * n
         for i, args in enumerate(zip(R, ln_rxi, ln_1plusxi)):
             out[i] = pool.apply_async(
-                _xi2sig_single, args=(args), kwds={'idx':i})
+                _xi2sig_single, args=args, kwds={'idx':i})
         pool.close()
         pool.join()
         # extract results
@@ -393,9 +380,9 @@ def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=True):
     idx : the argument `idx` is also returned only if specified
         when calling this function
     """
-    ln_xi = UnivariateSpline(ln_rxi, ln_1plusxi, s=0, ext=0)
+    lnxi = UnivariateSpline(ln_rxi, ln_1plusxi, s=0, ext=0)
     integrand = lambda x, R: \
-        (np.exp(ln_xi(np.log(R/x)))-1) / (x**2*(1-x**2)**0.5)
+        np.exp(lnxi(np.log(R/x))-1) / (x*x * (1-x*x)**0.5)
     sig_single = [quad(integrand, 0, 1, args=(Ri,))[0] for Ri in R]
     if idx is not None:
         return sig_single, idx
