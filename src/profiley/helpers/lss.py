@@ -4,7 +4,8 @@ import multiprocessing as mp
 import numpy as np
 import os
 import pyccl as ccl
-from scipy.integrate import quad, IntegrationWarning
+import quadpy
+from scipy.integrate import quad, quad_vec, IntegrationWarning
 from scipy.interpolate import UnivariateSpline
 from time import process_time, time
 import warnings
@@ -135,7 +136,7 @@ def power2xi(lnPk_lnk, R):
         radii at which to calculate the correlation function
     """
     assert len(R.shape) == 1, 'R must be 1-d'
-    h = hankel.SphericalHankelTransform(0,10000,0.00001)
+    h = hankel.SphericalHankelTransform(0,10000,0.000001)
     result = np.zeros(R.size)
     for i, Ri in enumerate(R):
         integ = lambda x: np.exp(lnPk_lnk(np.log(x/Ri))) * x*x \
@@ -217,8 +218,16 @@ def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
     return
 
 
-def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
+def xi2sigma(R, r_xi, xi, rho_m, threads=1, use_quadpy=True,
+             full_output=False, verbose=2):
     """Calculate the surface density from the correlation function
+
+    The integrals are performed with quadpy.quad, which provides a
+    50x speed-up over scipy.integrate.quad. For the default
+    setup, this returns surface densities accurate to within 1e-8 at
+    0.1 <= R <= 10 Mpc compared to Scipy's quad function. If the
+    range needed is outside these bounds, please make sure quadpy
+    meets your needs.
 
     Parameters
     ----------
@@ -238,9 +247,9 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
     threads : int, optional
         number of threads to calculate the surface densities in
         parallel
-    full_output : bool, optional
-        whether to return the radial coordinates as well as the
-        surface density (default False)
+    use_quadpy : bool, optional
+        whether to use quadpy.quad or scipy.integrate.quad. See note
+        above.
     full_output : bool, optional
         if ``True``, return the radii as well as the surface density,
         both with the same shapes
@@ -314,10 +323,10 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
     if verbose:
         print(f'Calculating {n} surface densities using {threads} threads.' \
               ' This may take a while...')
-    to = time()
+        to = time()
     if threads == 1:
         sigma = np.array(
-            [_xi2sig_single(*args)
+            [_xi2sig_single(*args, use_quadpy=use_quadpy)
              for args in zip(R, ln_rxi, ln_1plusxi)])
     # run in parallel
     else:
@@ -325,7 +334,8 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
         out = [[]] * n
         for i, args in enumerate(zip(R, ln_rxi, ln_1plusxi)):
             out[i] = pool.apply_async(
-                _xi2sig_single, args=args, kwds={'idx':i})
+                _xi2sig_single, args=args,
+                kwds={'idx': i, 'use_quadpy': use_quadpy})
         pool.close()
         pool.join()
         # extract results
@@ -346,9 +356,17 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
     return sigma
 
 
-def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=True):
+def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, use_quadpy=True,
+                   verbose=True):
     """Auxiliary function to calculate the surface density from
     the correlation function for a single profile
+
+    The integrals are performed with quadpy.quad, which provides a
+    50x speed-up over scipy.integrate.quad. For the default
+    setup, this returns surface densities accurate to within 1e-8 at
+    0.1 <= R <= 10 Mpc compared to Scipy's quad function. If the
+    range needed is outside these bounds, please make sure quadpy
+    meets your needs.
 
     The primary use of this function is as a helper for
     `xi2sigma`, which allows the calculation of multiple
@@ -368,6 +386,9 @@ def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=True):
         pointers to the original array to map the results of the
         multiprocessing Pool used to loop through calls to this
         function
+    use_quadpy : bool, optional
+        whether to use quadpy.quad or scipy.integrate.quad. See note
+        above.
 
     Returns
     -------
@@ -381,9 +402,52 @@ def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, verbose=True):
         when calling this function
     """
     lnxi = UnivariateSpline(ln_rxi, ln_1plusxi, s=0, ext=0)
-    integrand = lambda x, R: \
-        np.exp(lnxi(np.log(R/x))-1) / (x*x * (1-x*x)**0.5)
-    sig_single = [quad(integrand, 0, 1, args=(Ri,))[0] for Ri in R]
+    if use_quadpy:
+        integrand = lambda x, R: \
+            np.exp(lnxi(np.log(R[:,None]/x))-1) / (x*x * (1-x*x)**0.5)
+        sig_single = quadpy.quad(integrand, 0, 1, args=(R,), limit=100)[0]
+    else:
+        integrand = lambda x, R: \
+            np.exp(lnxi(np.log(R/x))-1) / (x*x * (1-x*x)**0.5)
+        sig_single = [quad(integrand, 0, 1, args=(Ri,))[0] for Ri in R]
     if idx is not None:
         return sig_single, idx
     return sig_single
+
+
+def _xi2sig_single_quadpy(R, ln_rxi, ln_1plusxi, axes, color, idx=None, 
+                          verbose=True):
+    """Keeping this to test quadpy performance as needed"""
+    lnxi = UnivariateSpline(ln_rxi, ln_1plusxi, s=0, ext=0)
+    integrand = lambda x, R: \
+        np.exp(lnxi(np.log(R/x))-1) / (x*x * (1-x*x)**0.5)
+    integrand_quadpy = lambda x, R: \
+        np.exp(lnxi(np.log(R[:,None]/x))-1) / (x*x * (1-x*x)**0.5)
+    # scipy
+    time_func = time
+    ti = time_func()
+    sig_single = [quad(integrand, 0, 1, args=(Ri,))[0] for Ri in R]
+    tf = time_func()
+    print(f'sig_single in {tf-ti:.3f} s')
+    # quadpy
+    ti = time_func()
+    sig_single_quadpy, err = quadpy.quad(
+        integrand_quadpy, 0, 1, args=(R,), epsrel=1e-9, 
+        epsabs=1e-9, limit=100)
+    #print(err[:20])
+    tf = time_func()
+    print(f'sig_single_quadpy in {tf-ti:.3f} s')
+    # compare
+    sig_single = np.array(sig_single)
+    print(sig_single.shape, sig_single_quadpy.shape)
+    print(np.allclose(sig_single, sig_single_quadpy))
+    # plot
+    axes[0].plot(R, sig_single, color=color, label='scipy')
+    axes[0].plot(R, sig_single_quadpy, '--', color=color, label='quadpy')
+    for ax in axes:
+        ax.legend()
+    diff = sig_single_quadpy/sig_single
+    axes[1].plot(R, np.abs(diff-1), color=color)
+    if idx is not None:
+        return sig_single, idx
+    return sig_single, sig_single_quadpy
