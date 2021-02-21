@@ -45,8 +45,6 @@ class BaseLensing(BaseCosmo):
         self._Dl = None
         self._Dls = None
         self._Ds = None
-        self.__c = None
-        self.__G = None
         return
 
     ### attributes ###
