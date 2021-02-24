@@ -60,6 +60,8 @@ class Filter:
             bins = conversion * bins
             x = conversion * x
         f = self.interp1d(x, profile)
+        # for some reason I need to re-read when using multiprocessing?
+        self.kmask = enmap.read_map(self.filename)
         profile2d = enmap.enmap(f(self.modrmap), self.kmask.wcs)
         rmap_filtered = self.filter_map(profile2d)
         binner = Bin2D(self.modrmap, bins)
