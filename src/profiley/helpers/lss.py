@@ -278,6 +278,8 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, integrator='quadpy',
       this function.
 
     """
+    assert verbose in (0,1,2), \
+        'Please set argument verbose to one of {0,1,2}'
     # we need to know the original shapes as we reshape these
     R_shape = R.shape
     r_xi_shape = r_xi.shape
@@ -293,7 +295,6 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, integrator='quadpy',
     assert r_xi_shape == xi_shape[-len(r_xi_shape):], \
         'inconsistent shapes for arguments r_xi and xi: received' \
         f'{r_xi_shape} and {xi_shape}'
-    assert verbose in (0,1,2)
     if len(xi_shape) == 1:
         return np.array(xi2sigma_single(R, ln_rxi, ln_1plusxi))
     # if xi is 3d we need to do a little bit of massaging to
@@ -323,8 +324,8 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, integrator='quadpy',
     ln_rxi = np.log(r_xi)
     ln_1plusxi = np.log(1+xi)
     if verbose:
-        print(f'Calculating {n} surface densities using {threads} threads.' \
-              ' This may take a while...')
+        print(f'Calculating {n} surface densities using {integrator} and' \
+              f' {threads} threads. This may take a while...')
         to = time()
     if run_test:
         from matplotlib import pyplot as plt
@@ -355,6 +356,8 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, integrator='quadpy',
         for i, x in enumerate(out):
             sigma_j, j = x.get()
             sigma[j] = sigma_j
+    if verbose == 2 or run_test:
+        print('sigma =', sigma.shape, '(in xi2sigma)')
     if run_test:
         for ax in axes:
             ax.set(xscale='log', yscale='log', xlabel='R (Mpc)')
@@ -373,19 +376,19 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, integrator='quadpy',
     if len(output_shape) == 3:
         sigma = sigma.reshape(output_shape)
         R = R.reshape(output_shape)
-    print('in xi2sigma:')
-    print('R =', R[0,0], R[-1,-1], R.shape)
-    print('sigma =', sigma[0,0], sigma[-1,-1], sigma.shape)
-    print()
+    if verbose == 2:
+        print('in xi2sigma:')
+        print('R =', R.min(), R.max(), R.shape)
+        #print('sigma =', sigma[0,0], sigma[-1][-1], sigma.shape)
+        print()
     sigma = 2 * rho_m * R * sigma
-    print('sigma =', sigma[0,0]/1e14, sigma[-1,-1]/1e14, sigma.shape)
-    if full_output:
-        return sigma, R
+
+    if full_output: return sigma, R
     return sigma
 
 
 def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, integrator='quadpy',
-                   verbose=True):
+                   verbose=False):
     """Auxiliary function to calculate the surface density from
     the correlation function for a single profile
 
@@ -437,18 +440,23 @@ def _xi2sig_single(R, ln_rxi, ln_1plusxi, idx=None, integrator='quadpy',
         #sig_single = [quad(integrand, 0, 1, args=(Ri,))[0] for Ri in R]
         sig_single, err = np.transpose(
             [quad(integrand, 0, 1, args=(Ri,)) for Ri in R])
+    elif integrator == 'scipy-vec':
+        integ = lambda x: integrand(x, R)
+        sig_single, err = quad_vec(integ, 0, 1, epsrel=1e-9, epsabs=1e-9)
+        print('sig_single =', sig_single.shape)
     elif integrator == 'quadpy':
-        #integrand = lambda x, R: \
-            #np.exp(lnxi(np.log(R/x[:,None]))-1) / (x*x * (1-x*x)**0.5)[:,None]
-        #integrand = lambda x, R: integrand(x, R[:,None])
         sig_single, err = quadpy.quad(
-            integrand, 0, 1, args=(R[:,None],), #epsrel=1e-11, epsabs=1e-11,
+            integrand, 0, 1, args=(R[:,None],), #epsrel=1e-7, epsabs=1e-7,
             limit=100)
     else:
         err = "argument integrator must be one of {'scipy','quadpy'};" \
               f" received {integrator}"
         raise ValueError(err)
-    print('integration error =', err[0], err[-1])
+    if verbose:
+        if np.iterable(err):
+            print('integration error =', err[0], err[-1])
+        else:
+            print('integration error =', err)
     if idx is not None:
         return sig_single, idx
     return sig_single
