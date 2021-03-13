@@ -1,7 +1,8 @@
 from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
-from scipy.integrate import cumtrapz, quad, simps
+from scipy.integrate import cumtrapz, quad, simps, trapz
+from time import time
 
 try:
     import pyccl as ccl
@@ -295,7 +296,8 @@ class Profile(BaseLensing):
             integral_samples=integral_samples)
         return s1 - s2
 
-    def offset(self, func, R, Roff, theta_samples=360, **kwargs):
+    def offset(self, func, R, Roff, theta_samples=360, weights=None,
+               **kwargs):
         """Calcuate any profile with a reference point different
         from its center
 
@@ -312,13 +314,28 @@ class Profile(BaseLensing):
         -------------------
         theta_samples : int
             number of samples for the angular integral from 0 to 2*pi
+        weights : array of floats, shape (M,)
+            weights to apply to each profile corresponding to every
+            value of ``Roff``. See ``Returns`` below
         kwargs : dict
             arguments to pass to ``func``
 
         Returns
         -------
-        offset : np.ndarray, shape (M,N,*self.shape)
-            offset profile
+        offset : np.ndarray,
+            offset profile. The shape of the array depends on whether
+            the ``weights`` argument is specified: if *not* specified
+            (default), then
+            .. code-block::
+
+                shape: (M,N,*self.shape)
+
+            if ``weights`` is provided, then the first axis will be
+            weight-averaged over so that
+            .. code-block::
+
+                shape: (N,*self.shape)
+
         """
         if not isinstance(theta_samples, (int,np.integer)):
             raise TypeError(
@@ -327,6 +344,13 @@ class Profile(BaseLensing):
         if not np.iterable(Roff):
             Roff = np.array([Roff])
         assert len(Roff.shape) == 1, 'argument Roff must be 1d'
+        if weights is not None:
+            if weights.size != Roff.size:
+                msg = 'weights must have the same size as Roff,' \
+                      f' received {weights.size}, {Roff.size},' \
+                      ' respectively.'
+                raise ValueError(msg)
+
         # can't get this to work using the @array decorator
         R = R.reshape((R.size,*self._dimensions))
         Roff = Roff.reshape((Roff.size,*self._dimensions,1,1))
@@ -334,8 +358,18 @@ class Profile(BaseLensing):
         theta1 = theta.reshape((theta_samples,*self._dimensions,1))
         x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta1))**0.5
         # looping slower but avoids memory issues
-        off = np.array([simps(func(xi, **kwargs), theta, axis=0)
-                        for xi in x])
+        # generator for the function calls beforehand makes it a little faster
+        f = (func(i, **kwargs) for i in x)
+        off = np.array([trapz(fi, theta, axis=0) for fi in f])
+
+        if weights is not None:
+            # create a slice so we can multiply by weights
+            # along the first axis
+            s_ = [None] * off.ndim
+            s_[0] = slice(None)
+            Roff = np.squeeze(Roff)
+            off = trapz(weights[tuple(s_)]*off, Roff, axis=0) \
+                / trapz(weights, Roff)
         return off / (2*np.pi)
 
     def offset_profile(self, R, Roff, **kwargs):
