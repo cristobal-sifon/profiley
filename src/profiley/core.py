@@ -1,7 +1,8 @@
 from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
-from scipy.integrate import cumtrapz, quad, simps
+from scipy.integrate import cumtrapz, quad, simps, trapz
+from time import time
 
 try:
     import pyccl as ccl
@@ -349,6 +350,7 @@ class Profile(BaseLensing):
                       f' received {weights.size}, {Roff.size},' \
                       ' respectively.'
                 raise ValueError(msg)
+
         # can't get this to work using the @array decorator
         R = R.reshape((R.size,*self._dimensions))
         Roff = Roff.reshape((Roff.size,*self._dimensions,1,1))
@@ -356,13 +358,16 @@ class Profile(BaseLensing):
         theta1 = theta.reshape((theta_samples,*self._dimensions,1))
         x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta1))**0.5
         # looping slower but avoids memory issues
-        off = np.array([simps(func(xi, **kwargs), theta, axis=0)
-                        for xi in x])
+        # generator for the function calls beforehand makes it a little faster
+        f = (func(i, **kwargs) for i in x)
+        off = np.array([trapz(fi, theta, axis=0) for fi in f])
+
         if weights is not None:
             # create a slice so we can multiply by weights
             # along the first axis
             s_ = [None] * off.ndim
             s_[0] = slice(None)
+            Roff = np.squeeze(Roff)
             off = trapz(weights[tuple(s_)]*off, Roff, axis=0) \
                 / trapz(weights, Roff)
         return off / (2*np.pi)
