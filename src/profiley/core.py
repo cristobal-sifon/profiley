@@ -314,7 +314,7 @@ class Profile(BaseLensing):
         -------------------
         theta_samples : int
             number of samples for the angular integral from 0 to 2*pi
-        weights : array of floats, shape (M,), or one of {'gamma','rayleigh'}
+        weights : array of floats, shape (M,)
             weights to apply to each profile corresponding to every
             value of ``Roff``. See ``Returns`` below
         kwargs : dict
