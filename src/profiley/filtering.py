@@ -9,6 +9,7 @@ import pixell.fft
 
 
 class Filter:
+    """Class used to filter a real-space profile in Fourier space"""
 
     def __init__(self, filename):
         """
@@ -21,6 +22,14 @@ class Filter:
         self.filename = filename
         self.kmask = enmap.read_map(self.filename)
         self.modrmap = self.kmask.modrmap()
+        self.wcs = self.kmask.wcs
+
+    def __repr__(self):
+        return f"Filter('{self.filename}')"
+
+    def __str__(self):
+        return f'Filter: {self.filename}\n' \
+               f'WCS: {self.wcs}'
 
     ### methods ###
 
@@ -60,7 +69,7 @@ class Filter:
             bins = conversion * bins
             x = conversion * x
         f = self.interp1d(x, profile)
-        profile2d = enmap.enmap(f(self.modrmap), self.kmask.wcs)
+        profile2d = enmap.enmap(f(self.modrmap), self.wcs)
         rmap_filtered = self.filter_map(profile2d)
         binner = Bin2D(self.modrmap, bins)
         xout, filtered = binner.bin(rmap_filtered)
@@ -71,8 +80,11 @@ class Filter:
 
     def filter_map(self, xmap):
         kmap = pixell.fft.fft(xmap, axes=[-2,-1])
+        # self.kmask loses its wcs somewhere somehow when I call it
+        # in particular applications, so this helps bypass that
+        _kmask = enmap.enmap(self.kmask.data, self.wcs)
         rmap = np.real(pixell.fft.ifft(
-            kmap*self.kmask, axes=[-2,-1], normalize=True))
+            kmap*_kmask, axes=[-2,-1], normalize=True))
         return enmap.enmap(rmap, xmap.wcs)
 
     def interp1d(self, x, y, bounds_error=False, fill_value=0, **kwargs):
