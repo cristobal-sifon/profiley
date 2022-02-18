@@ -3,6 +3,7 @@ from astropy.cosmology import Planck15
 import numpy as np
 from scipy.integrate import cumtrapz, quad, simps, trapz
 from time import time
+import warnings
 
 try:
     import pyccl as ccl
@@ -11,8 +12,11 @@ except ImportError:
     has_ccl = False
 
 from .helpers.cosmology import BaseCosmo
-from .helpers.decorators import array, inMpc
+from .helpers.decorators import array, deprecated, inMpc
 from .helpers.lensing import BaseLensing
+
+
+warnings.simplefilter('once', category=DeprecationWarning)
 
 
 class Profile(BaseLensing):
@@ -68,6 +72,18 @@ class Profile(BaseLensing):
     If it does not have analytical expressions, these methods will also
     exist, but they will be calculated numerically, so they may be
     somewhat slower depending on the precision required.
+
+    Deprecated methods
+    ..................
+
+    The following methods are deprecated as of ``v1.3.0`` and will be
+    removed in a future version. They should be replaced as follows:
+
+        surface_density --> projected
+        enclosed_surface_density --> projected_cumulative
+        excess_surface_density --> projected_excess
+
+    and analogously with ``offset`` methods.
 
     Cosmology
     ---------
@@ -475,28 +491,58 @@ class Profile(BaseLensing):
 
     ### aliases for backward compatibility
 
+    @deprecated('1.3.0', instead=f'projected')
     def surface_density(self, *args, **kwargs):
-        """Alias for ``self.projected``"""
+        """Alias for ``self.projected``
+
+        .. note::
+            Deprecated since version 1.3.0
+        """
         return self.projected(*args, **kwargs)
 
+    @deprecated('1.3.0', instead='projected_cumulative')
     def enclosed_surface_density(self, *args, **kwargs):
-        """Alias for ``self.projected_cumulative``"""
+        """Alias for ``self.projected_cumulative``
+
+        .. note::
+            Deprecated since version 1.3.0
+        """
         return self.projected_cumulative(*args, **kwargs)
 
+    @deprecated('1.3.0', instead='projected_excess')
     def excess_surface_density(self, *args, **kwargs):
-        """Alias for ``self.projected_excess``"""
+        """Alias for ``self.projected_excess``
+
+        .. note::
+            Deprecated since version 1.3.0
+        """
         return self.projected_excess(*args, **kwargs)
 
+    @deprecated('1.3.0', instead='offset_projected')
     def offset_surface_density(self, *args, **kwargs):
-        """Alias for ``self.offset_projected``"""
+        """Alias for ``self.offset_projected``
+
+        .. note::
+            Deprecated since version 1.3.0
+        """
         return self.offset_projected(*args, **kwargs)
 
+    @deprecated('1.3.0', instead='offset_projected_cumulative')
     def offset_enclosed_surface_density(self, *args, **kwargs):
-        """Alias for ``self.offset_projected_cumulative``"""
+        """Alias for ``self.offset_projected_cumulative``
+
+        .. note::
+            Deprecated since version 1.3.0
+        """
         return self.offset_projected_cumulative(*args, **kwargs)
 
+    @deprecated('1.3.0', instead='offset_projected_excess')
     def offset_excess_surface_density(self, *args, **kwargs):
-        """Alias for ``self.offset_projected_excess``"""
+        """Alias for ``self.offset_projected_excess``
+
+        .. note::
+            Deprecated since version 1.3.0
+        """
         return self.offset_projected_excess(*args, **kwargs)
 
     ### auxiliary methods to test integration performance ###

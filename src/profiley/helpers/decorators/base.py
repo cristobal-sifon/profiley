@@ -1,6 +1,7 @@
 from astropy import units as u
 from functools import wraps
 import numpy as np
+import warnings
 
 
 def array(f):
@@ -24,15 +25,21 @@ def array(f):
     return decorated
 
 
-def inMpc(f):
-    """Change units of a Quantity to Mpc and return a float."""
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if isinstance(args[1], u.Quantity):
-            args = list(args)
-            args[1] = args[1].to(u.Mpc).value
-        return f(*args, **kwargs)
-    return decorated
+def deprecated(since="", instead="",
+               category=DeprecationWarning):
+    def inner(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            msg = f'``{f.__name__}`` is deprecated'
+            if since:
+                msg = f'{msg} since {since}'
+            msg = f'{msg} and will be removed in a future version.'
+            if instead:
+                msg = f'{msg} Use ``{instead}`` instead'
+            warnings.warn(msg, category)
+            return f(*args, **kwargs)
+        return decorated
+    return inner
 
 
 def float_args(f):
@@ -57,5 +64,16 @@ def float_args(f):
             except TypeError as e:
                 msg = f'argument {name} must be a float or array of float'
                 raise TypeError(msg) from e
+        return f(*args, **kwargs)
+    return decorated
+
+
+def inMpc(f):
+    """Change units of a Quantity to Mpc and return a float."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if isinstance(args[1], u.Quantity):
+            args = list(args)
+            args[1] = args[1].to(u.Mpc).value
         return f(*args, **kwargs)
     return decorated
