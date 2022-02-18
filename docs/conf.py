@@ -16,16 +16,14 @@
 
 import sphinx_rtd_theme
 
-import profiley
-
 # -- Project information -----------------------------------------------------
 
-project = 'profiley'
+# The full version, including alpha/beta/rc tags
+release = '1.3.0'
+
+project = f'profiley v{release}'
 copyright = '2020-2022, Cristóbal Sifón'
 author = 'Cristóbal Sifón'
-
-# The full version, including alpha/beta/rc tags
-release = profiley.__version__
 
 
 # -- General configuration ---------------------------------------------------
