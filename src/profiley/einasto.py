@@ -32,6 +32,9 @@ class Einasto(Profile):
         -2. If not an astropy Quantity, assumed to be in Mpc
     alpha : float or ndarray
         slope steepening
+
+    .. warning:
+        The ``mdelta`` method has not yet been implemented
     """
     def __init__(self, rho_s, r_s, alpha, z=0, **kwargs):
         if isinstance(rho_s, u.Quantity):
@@ -77,6 +80,9 @@ class Einasto(Profile):
         ----------
         overdensity : int or float
             spherical overdensity within which to calculate the mass
+
+        .. warning::
+            Not implemented
         """
         self._assert_background(background)
         self._assert_overdensity(overdensity)
