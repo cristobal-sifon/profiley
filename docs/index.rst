@@ -12,14 +12,14 @@ used to describe galaxies and clusters of galaxies.
 Installation
 ++++++++++++
 
-``profiley`` is available through the Python Package Index (`PyPI 
+``profiley`` is available through the Python Package Index (`PyPI
 <https://pypi.org/>`_), which means installation is as easy as
 
 .. code-block::
 
     pip install profiley
 
-Alternatively, you may download the development version by forking or cloning 
+Alternatively, you may download the development version by forking or cloning
 the `github repository <https://github.com/cristobal-sifon/profiley>`_.
 
 
@@ -41,7 +41,7 @@ For example, to obtain the surface density profile of an NFW profile we simply n
     R = np.logspace(-1, 2, 10)
     rho = nfw.projected(R)
 
-``profiley`` can handle ``np.ndarray`` objects of any shape, provided all the 
+``profiley`` can handle ``np.ndarray`` objects of any shape, provided all the
 arguments can be multiplied without manipulation. For instance, we can define an
 ``nfw`` object as follows
 
@@ -53,7 +53,7 @@ arguments can be multiplied without manipulation. For instance, we can define an
 
     nfw = NFW(mass, concentration, z)
 
-whose `profile methods <profiles/Profile/index.html>`_ will produce arrays of 
+whose `profile methods <profiles/Profile/index.html>`_ will produce arrays of
 profiles with shape ``(R.size,5,3,11)``.
 
 
@@ -87,8 +87,9 @@ License
 
     profiles/Profile/index
     profiles/index
-    filtering
     profiles/custom
+    lss
+    filtering
     LICENSE
 
 
