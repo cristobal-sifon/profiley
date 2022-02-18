@@ -56,6 +56,13 @@ arguments can be multiplied without manipulation. For instance, we can define an
 whose `profile methods <profiles/Profile/index.html>`_ will produce arrays of 
 profiles with shape ``(R.size,5,3,11)``.
 
+
+Examples
+++++++++
+
+For more detailed usage, see the `examples on github <https://github.com/cristobal-sifon/profiley/tree/master/examples>`_.
+
+
 Available profiles
 ++++++++++++++++++
 

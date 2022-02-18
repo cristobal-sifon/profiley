@@ -21,7 +21,7 @@ import profiley
 # -- Project information -----------------------------------------------------
 
 project = 'profiley'
-copyright = '2020, Cristóbal Sifón'
+copyright = '2020-2022, Cristóbal Sifón'
 author = 'Cristóbal Sifón'
 
 # The full version, including alpha/beta/rc tags
@@ -34,6 +34,7 @@ release = profiley.__version__
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'nbsphinx',
     'sphinx_rtd_theme'
 ]
 
