@@ -1,7 +1,7 @@
-Two-halo terms
-===================================
+Two-halo term
+=============
 
-It is possible to calculate the contribution
+It is possible to use ``profiley`` to calculate the contribution
 from large-scale structure, usually known as the "two-halo term". Doing
 this requires calculation of the matter power spectrum, which is not
 implemented in ``profiley``, but given a power spectrum ``profiley`` provides
