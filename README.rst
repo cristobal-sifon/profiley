@@ -23,6 +23,10 @@ Change Log
 ==========
 
 
+Version 1.3.1
+-------------
+* Fixed bug in installation (!)
+
 Version 1.3.0
 -------------
 * Updated names of ``Profile`` methods
