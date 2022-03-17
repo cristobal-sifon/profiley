@@ -20,7 +20,7 @@ class ProfilesFile:
     def __init__(self, filename):
         self.filename = filename
 
-    def 
+    def
 """
 
 
@@ -123,7 +123,6 @@ def load_profiles(filename, x=None, precision=2, force_match_all=True):
     return profiles, r, x1, x2, info
 
 
-#def power2xi(k, Pgm, R):
 def power2xi(lnPgm_lnk, R):
     """Calculate the correlation function using the Hankel
     transform of the power spectrum
@@ -142,20 +141,12 @@ def power2xi(lnPgm_lnk, R):
         function to calculate the natural log of the power spectrum
         given the natural log of the wavenumber
     """
-    #assert len(k.shape) == 1, 'k must be 1-d'
     assert len(np.squeeze(R).shape) == 1, 'R must be 1-d'
-    result = np.zeros(R.shape)
     h = hankel.SphericalHankelTransform(0,10000,0.00001)
-    for i in range(result.size):
-        integ = lambda x: \
-            np.exp(lnPgm_lnk(np.log(x/R[i]))) * (x**2) / (2*np.pi**2)
-        result[i] = h.transform(integ)[0]
-    return result / R**3
-    #xi = np.zeros((z.size,m.size,Rxi.size))
-    #for i in range(z.size):
-        #for j in range(m.size):
-            #lnPgm_lnk = interp1d(lnk, lnPgm[i,j])
-            #xi[i,j] = lss.power2xi(lnPgm_lnk, Rxi)
+    result = np.array(
+        [h.transform(lambda x: np.exp(lnPgm_lnk(np.log(x/Ri))) * x**2)[0]
+         for Ri in R])
+    return result / (2*np.pi**2 * R**3)
 
 
 def save_profiles(file, x, y, R, profiles, xlabel='z', ylabel='logm',
