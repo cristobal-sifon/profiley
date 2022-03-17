@@ -373,7 +373,7 @@ class Profile(BaseLensing):
         theta = np.linspace(0, 2*np.pi, theta_samples)
         theta1 = theta.reshape((theta_samples,*self._dimensions,1))
         x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta1))**0.5
-        print(x.shape)
+        #print(x.shape)
         # looping slower but avoids memory issues
         # v1
         # generator for the function calls beforehand makes it a little faster
