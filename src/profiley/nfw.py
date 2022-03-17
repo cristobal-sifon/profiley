@@ -297,7 +297,7 @@ class NFW(BaseNFW):
     def projected(self, R, **kwargs):
         """Analytical projected NFW at distance(s) R"""
         x = R / self.rs
-        s = np.ones_like(x) / 3
+        s = np.ones(x.shape) / 3
         s[x == 0] = 0
         j = (x > 0) & (x < 1)
         s[j] = (1 - 2*np.arctanh(((1-x[j]) / (1+x[j]))**0.5)
@@ -314,7 +314,7 @@ class NFW(BaseNFW):
     def projected_cumulative(self, R, **kwargs):
         """Analytical cumulative projected NFW profile"""
         x = R / self.rs
-        s = np.ones_like(x) + np.log(0.5)
+        s = np.ones(x.shape) + np.log(0.5)
         s[x == 0] = 0
         j = (x > 0) & (x < 1)
         s[j] = (np.log(0.5*x[j]) \
@@ -407,4 +407,3 @@ class Hernquist(GNFW):
     """
     def __init__(self, mass, c, z, **kwargs):
         super().__init__(mass, c, z, alpha=1, beta=4, gamma=1, **kwargs)
-
