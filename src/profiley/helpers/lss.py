@@ -20,7 +20,7 @@ class ProfilesFile:
     def __init__(self, filename):
         self.filename = filename
 
-    def 
+    def
 """
 
 
@@ -249,6 +249,8 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
         to two additional dimensions (say, mass and redshift). Note
         that it is assumed that at least one of these additional
         dimensions is indeed present
+    rho_m : float
+        average comoving matter density
     threads : int, optional
         number of threads to calculate the surface densities in
         parallel
