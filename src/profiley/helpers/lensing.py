@@ -106,9 +106,9 @@ class BaseLensing(BaseCosmo):
     #@float_args
     def convergence(self, R, z_s=None, Roff=None, **kwargs):
         if Roff is None:
-            s = self.surface_density(R)
+            s = self.projected(R)
         else:
-            s = self.offset_surface_density(R, Roff)
+            s = self.offset_projected(R, Roff)
         if z_s is None:
             z_s = self.z_s
         return s / self.sigma_crit(z_s=z_s, **kwargs)
@@ -116,7 +116,7 @@ class BaseLensing(BaseCosmo):
     def offset_convergence(self, R, Roff, z_s=None, **kwargs):
         if z_s is None:
             z_s = self.z_s
-        return self.offset_surface_density(R, Roff) \
+        return self.offset_projected(R, Roff) \
             / self.sigma_crit(z_s=z_s, **kwargs)
 
 
