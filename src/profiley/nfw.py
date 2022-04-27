@@ -264,7 +264,7 @@ class NFW(BaseNFW):
 
     def __repr__(self):
         msg = f'NFW profile object containing {np.prod(self._shape)}' \
-              f' profiles. shape: {self._shape}'
+              f' profiles\nshape: {self._shape}'
         od_msg = f'overdensity: {self.overdensity}{self.background}'
         if np.iterable(self.mass) and self.mass.min() < self.mass.max():
             mass_msg = 'log10 mass/Msun range =' \
