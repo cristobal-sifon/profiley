@@ -155,11 +155,6 @@ class Profile(BaseLensing):
                 f'overdensity must be positive; received {overdensity}')
         return
 
-    def _define_array(self, x):
-        if not np.iterable(x):
-            return x * np.ones(self._shape)
-        return x
-
     def _set_shape(self, args_product):
         if hasattr(self, 'shape'):
             msg = 'attribute shape already set, cannot be overwritten'
@@ -373,23 +368,7 @@ class Profile(BaseLensing):
         theta = np.linspace(0, 2*np.pi, theta_samples)
         theta1 = theta.reshape((theta_samples,*self._dimensions,1))
         x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta1))**0.5
-        #print(x.shape)
-        # looping slower but avoids memory issues
-        # v1
-        # generator for the function calls beforehand makes it a little faster
-        #f = (func(i, **kwargs) for i in x)
-        #off = np.array([trapz(fi, theta, axis=0) for fi in f])
-        #print(off.shape)
-        # v2
         off = np.array([trapz(func(i, **kwargs), theta, axis=0) for i in x])
-        #print(off.shape)
-        # v3
-        #off = trapz(func(x, **kwargs), theta, axis=1)
-        # v4
-        #off = np.vstack([trapz(func(x[i:i+2], **kwargs), theta, axis=1)
-                         #for i in range(0, len(x), 2)])
-        #print(off1.shape)
-        #print(np.allclose(off, off1))
 
         if weights is not None:
             # create a slice so we can multiply by weights
