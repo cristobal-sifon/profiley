@@ -1,4 +1,3 @@
-from icecream import ic
 import numpy as np
 from scipy.integrate import trapz
 from scipy.interpolate import UnivariateSpline
@@ -10,7 +9,7 @@ def offset(profile, R, Roff, theta_samples=360, weights=None):
 
     This is useful, for instance, when large-scale structure profiles
     beyond the one-halo profiles implemented directly in profiley,
-    need to be calculated at offset positions.
+    need to be calculated around offset positions.
 
     This implementation is significantly faster than ``Profile.offset``
     so it should be preferred.
@@ -45,13 +44,13 @@ def offset(profile, R, Roff, theta_samples=360, weights=None):
         (default), then
         .. code-block::
 
-            shape: (P,N,*self.shape)
+            shape: ([M,...,]P,N)
 
         if ``weights`` is provided, then the first axis will be
         weight-averaged over so that
         .. code-block::
 
-            shape: (N,*self.shape)
+            shape: ([M,...,]N)
 
     """
     if not isinstance(theta_samples, (int,np.integer)):
