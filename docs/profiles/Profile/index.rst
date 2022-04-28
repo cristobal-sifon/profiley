@@ -1,11 +1,11 @@
 The ``Profile`` base class
 ==========================
 
-All profiles in ``profiley`` inherit from the ``Profile`` base class, which 
-implements numerical calculation of all methods, starting from a ``profile`` 
-method in which the three-dimensional profile is calculated. The ``Profile`` 
+All profiles in ``profiley`` inherit from the ``Profile`` base class, which
+implements numerical calculation of all methods, starting from a ``profile``
+method in which the three-dimensional profile is calculated. The ``Profile``
 class allows for all profiles to have a unique, simple API. See all implemented
-profiles `here <../index.html>`_. 
+profiles `here <../index.html>`_.
 
 +-------------------------------------------------------------------------------------------------------------+
 | Methods defined in this class                                                                               |
@@ -19,48 +19,10 @@ profiles `here <../index.html>`_.
 | ``projected_excess(R, **kwargs)``     | difference between ``projected_cumulative(R)`` and ``projected(R)`` |
 +---------------------------------------+---------------------------------------------------------------------+
 
-where ``R`` are the radii at which to return the profiles. Where available, 
-these methods are implemented using the analytical expressions; otherwise they 
-are calculated numerically. Additional arguments absorbed in ``kwargs`` relate 
+where ``R`` are the radii at which to return the profiles. Where available,
+these methods are implemented using the analytical expressions; otherwise they
+are calculated numerically. Additional arguments absorbed in ``kwargs`` relate
 to the precision (and speed) of numerical integration. See below.
-
-**Offset profiles**
-
-It is also possible to calculate a given profile projection when the reference 
-point is not the center of the profile itself. If the projected distance between 
-the reference point and the center of the profile is :math:`R_\mathrm{off}`, 
-then the measured projected profile is
-
-.. math::
-
-    \Sigma_\mathrm{off}(R,R_\mathrm{off}) = \frac1{2\pi}
-        \int_0^{2\pi}d\theta\,
-            \Sigma\left(
-                \sqrt{R_\mathrm{off}^2 + R^2 + 2RR_\mathrm{off}\cos\theta}
-            \right)
-
-and analogously for other projections. These offset profiles are calculated 
-numerically using the ``offset`` wrapper:
-
-.. code-block::
-
-    offset(func, R, R_off, theta_samples=360, **kwargs)
-
-where ``func`` is any of the methods above, ``R_off`` is either a ``float`` or a 
-1-d ``np.ndarray``, and ``theta_samples`` sets the precision for the angular 
-integral. Each of the projected profiles is implemented in the following 
-convenience functions:
-
-+-----------------------------------------------------+
-| ``offset_profile(R, R_off, **kwargs)``              |
-+-----------------------------------------------------+
-| ``offset_projected(R, R_off, **kwargs)``            |
-+-----------------------------------------------------+
-| ``offset_projected_cumulative(R, R_off, **kwargs)`` |
-+-----------------------------------------------------+
-| ``offset_projected_excess(R, R_off, **kwargs)``     |
-+-----------------------------------------------------+
-
 
 .. numerical:
 
@@ -103,26 +65,97 @@ The excess projected profile is defined as
 This quantity is particularly useful in weak gravitational lensing studies,
 where :math:`\Delta\Sigma(R)` is the excess surface density (ESD), which is
 directly related to the weak lensing shape distortion, called *shear*,
-:math:`\gamma`, through :math:`\gamma=\Delta\Sigma/\Sigma_\mathrm{c}`, where 
+:math:`\gamma`, through :math:`\gamma=\Delta\Sigma/\Sigma_\mathrm{c}`, where
 :math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing
 functionality <#lensing>`_).
 
 Precision of numerical integration
 ----------------------------------
 
-Several optional arguments allow the user to find their own sweet-spot in the 
-trade-off between precision and execution time. Using the default parameters the 
-precision of the numerical calculations for an NFW profile is better than 0.1% 
-at all radii, as demonstrated in the `Examples 
+Several optional arguments allow the user to find their own sweet-spot in the
+trade-off between precision and execution time. Using the default parameters the
+precision of the numerical calculations for an NFW profile is better than 0.1%
+at all radii, as demonstrated in the `Examples
 <https://github.com/cristobal-sifon/profiley/blob/master/examples/nfw/nfw_single.ipynb>`_.
+
+.. offset:
+
+Offset profiles
++++++++++++++++
+
+It is also possible to calculate a given profile projection when the reference
+point is not the center of the profile itself. If the projected distance between
+the reference point and the center of the profile is :math:`R_\mathrm{off}`,
+then the measured projected profile is
+
+.. math::
+
+    \Sigma_\mathrm{off}(R,R_\mathrm{off}) = \frac1{2\pi}
+        \int_0^{2\pi}d\theta\,
+            \Sigma\left(
+                \sqrt{R_\mathrm{off}^2 + R^2 + 2RR_\mathrm{off}\cos\theta}
+            \right)
+
+and analogously for other projections. These offset profiles are calculated
+numerically using the ``offset`` wrapper:
+
+.. code-block::
+
+    offset(func, R, R_off, theta_samples=360, weights=None, **kwargs)
+
+where ``func`` is any of the methods above, ``R_off`` is either a ``float`` or a
+1-d ``np.ndarray``, ``theta_samples`` sets the precision for the angular
+integral, and ``weights`` is a weight array applied to average the profiles
+evaluated at different :math:`R_\mathrm{off}`. Each of the projected profiles
+is implemented in the following convenience functions:
+
++-----------------------------------------------------+
+| ``offset_profile(R, R_off, **kwargs)``              |
++-----------------------------------------------------+
+| ``offset_projected(R, R_off, **kwargs)``            |
++-----------------------------------------------------+
+| ``offset_projected_cumulative(R, R_off, **kwargs)`` |
++-----------------------------------------------------+
+| ``offset_projected_excess(R, R_off, **kwargs)``     |
++-----------------------------------------------------+
+
+Stand-alone offset functionality
+--------------------------------
+
+Since ``v1.4.0`` it is also possible to offset an arbitrary profile given as an
+array, using the ``offset`` function within the ``numeric`` module:
+
+.. code-block::
+
+    from profiley.nfw import NFW
+    from profiley.numeric import offset
+
+    mass = 1e14
+    concentration = 5
+    z = 0.2
+    nfw = NFW(mass, concentration, z)
+
+    R = np.logspace(-1, 1, 20)
+    sigma = nfw.projected(R)
+
+    Roff = np.arange(0, 1, 10)
+    weights = np.normal(0.2, 0.1, Roff.size)
+    sigma_off = offset(sigma, R, Roff, weights=weights)
+
+For more details, see the `Examples
+<https://github.com/cristobal-sifon/profiley/blob/master/examples/nfw/nfw_single.ipynb>`_.
+
+In fact, the latter implementation is about an order of magnitude faster
+than the ``Profile`` method described above, and should be preferred for
+the time being.
 
 .. inheritance:
 
 Inheritance
 +++++++++++
 
-What follows are the descriptions of helper classes from which ``Profile`` 
-inherits. These classes are not to be instantiated directly, but the description 
+What follows are the descriptions of helper classes from which ``Profile``
+inherits. These classes are not to be instantiated directly, but the description
 of attributes and methods defined within these classes is separated for clarity.
 
 
@@ -194,6 +227,6 @@ which implements quantities relevant for gravitational lensing analysis.
 | ``sigma_crit([z_s])``                   | critical surface density                    |
 +-----------------------------------------+---------------------------------------------+
 
-In all the methods above, the source redshift, ``z_s``, may be specified as a 
-keyword argument, in which case it will override the ``self.z_s`` attribute *for 
+In all the methods above, the source redshift, ``z_s``, may be specified as a
+keyword argument, in which case it will override the ``self.z_s`` attribute *for
 that particular call of the method only*.

@@ -19,7 +19,7 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 # The full version, including alpha/beta/rc tags
-release = '1.3.0'
+release = '1.4.0'
 
 project = f'profiley v{release}'
 copyright = '2020-2022, Cristóbal Sifón'
