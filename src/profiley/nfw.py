@@ -98,7 +98,7 @@ class BaseNFW(Profile):
         self._assert_background(background)
         if overdensity == self.overdensity \
                 and background == self.background:
-            return self.mass
+            return self.mass, self.c
         # do we need to convert the background density?
         if background == self.background:
             bgfactor = 1
