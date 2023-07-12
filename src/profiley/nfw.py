@@ -80,8 +80,6 @@ class BaseNFW(Profile):
         -------------------
         background : one of ('c','m')
             background density as a reference for ``overdensity``.
-            WARNING: currently only the same background as used in
-            defining this object is implemented
         err: float
             maximum error on ``delta_c`` that can be tolerated to claim
             convergence
@@ -163,6 +161,30 @@ class BaseNFW(Profile):
         # calculate mass from the relation between mass, c, and overdensity
         mfactor = (overdensity/self.overdensity) * (cdelta/self.c)**3
         return mfactor*self.mass, cdelta
+
+    def rdelta(self, overdensity: float, background: str='c', **kwargs):
+        """Calculate the radius enclosing a given overdensity
+
+        Parameters
+        ----------
+        overdensity : float
+            overdensity at which the radius should be calculated
+
+        Optional parameters
+        -------------------
+        background : one of ('c','m')
+            background density as a reference for ``overdensity``.
+        kwargs : dict
+            passed to ``self.mdelta``
+
+        Returns
+        -------
+        rdelta : ndarray, shape ``self.c.shape``
+            radius enclosing the requested overdensity
+        """
+        mdelta, cdelta = self.mdelta(overdensity, background, **kwargs)
+        rho = (self.mean_density if background == 'm' else self.critical_density)
+        return (mdelta / (overdensity*rho*4*np.pi/3)) ** (1/3)
 
     def density(self, *args, **kwargs):
         """Alias for ``self.profile``"""
