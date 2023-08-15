@@ -22,6 +22,10 @@ References
 Change Log
 ==========
 
+Version 1.4.3
+-------------
+* Fix bug calculating a single surface density in ``xi2sigma``
+
 Version 1.4.0
 -------------
 * Added stand-alone offset calculation for arbitrary profiles
