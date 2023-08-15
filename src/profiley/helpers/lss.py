@@ -291,7 +291,7 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
         f'{r_xi_shape} and {xi_shape}'
     assert verbose in (0,1,2)
     if len(xi_shape) == 1:
-        return np.array(xi2sigma_single(R, ln_rxi, ln_1plusxi))
+        return np.array(_xi2sig_single(R, ln_rxi, ln_1plusxi))
     # if xi is 3d we need to do a little bit of massaging to
     # turn it into a 2d array, so that one loop will suffice
     # to go through it. We reshape as appropriate at the end.
