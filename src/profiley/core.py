@@ -312,6 +312,10 @@ class Profile(BaseLensing):
         """Calcuate any profile with a reference point different
         from its center
 
+        NOTE: We recommend using the significantly faster
+        ``profiley.numeric.offset`` instead of this method, and will
+        merge that implementation into this function in the future.
+
         Parameters
         ----------
         func : callable

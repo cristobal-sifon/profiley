@@ -1,5 +1,6 @@
 from astropy import constants as ct, units as u
 from astropy.cosmology import FLRW, Planck15
+import numpy as np
 
 
 class BaseCosmo:
@@ -51,7 +52,9 @@ class BaseCosmo:
         self._mean_density = \
             (self.cosmo.critical_density0 * self.cosmo.Om0).to(
                 u.Msun/u.Mpc**3).value
-        if self.frame != 'comoving':
+        if self.frame == 'comoving':
+            self._mean_density = self._mean_density * np.ones(self.z.shape)
+        else:
             self._mean_density = self._mean_density * (1+self.z)**3
         return self._mean_density
 
