@@ -91,14 +91,16 @@ License
     lss
     filtering
     LICENSE
+    autoapi/profiley
 
 
-Indices and tables
-==================
+API Documentation
++++++++++++++++++
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :maxdepth: 5
+
+   autoapi/profiley/index
 
 
 .. _License: LICENSE.html

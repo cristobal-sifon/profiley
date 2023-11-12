@@ -84,7 +84,7 @@ def load_profiles(filename, x=None, precision=2, force_match_all=True):
     x1, x2 = values
     # check whether we need to match values
     if x is not None:
-        if not np.all([np.unique(xi).size == xi.size]):
+        if not np.all([np.unique(x1).size == x2.size]):
             raise ValueError('Not all columns of x are unique')
         isin = [[]] * ncols
         for i in range(ncols):
@@ -291,61 +291,62 @@ def xi2sigma(R, r_xi, xi, rho_m, threads=1, full_output=False, verbose=2):
         f'{r_xi_shape} and {xi_shape}'
     assert verbose in (0,1,2)
     if len(xi_shape) == 1:
-        return np.array(_xi2sig_single(R, np.log(r_xi), np.log(1+xi)))
+        sigma = np.array(_xi2sig_single(R, np.log(r_xi), np.log(1+xi)))
     # if xi is 3d we need to do a little bit of massaging to
     # turn it into a 2d array, so that one loop will suffice
     # to go through it. We reshape as appropriate at the end.
-    if verbose == 2:
-        print('Internally rearranging input data...')
-    # it's a little more complicated if they have 2 dimensions
-    if len(R.shape) == 1:
-        R = np.array([R for i in range(n)])
-    if len(r_xi_shape) == 1:
-        r_xi = np.array([r_xi for i in range(n)])
-    # do those cases in here
-    if len(xi_shape) == 3:
-        xi = np.vstack(xi)
-        # arrange r_xi to match xi's shape
-        if len(r_xi_shape) == 2:
-            r_xi = np.array([r_xi for i in range(xi_shape[0])])
-            r_xi = np.vstack(r_xi)
-        # arrange R
-        if len(R_shape) == 2:
-            if R.shape[0] == xi_shape[0]:
-                R = np.vstack([[Ri for i in range(xi_shape[1])] for Ri in R])
-            else:
-                R = np.vstack([[Ri for Ri in R] for i in range(xi_shape[0])])
-    # OK done with the massaging
-    ln_rxi = np.log(r_xi)
-    ln_1plusxi = np.log(1+xi)
-    if verbose:
-        print(f'Calculating {n} surface densities using {threads} threads.' \
-              ' This may take a while...')
-    to = time()
-    if threads == 1:
-        sigma = np.array(
-            [_xi2sig_single(*args) for args in zip(R, ln_rxi, ln_1plusxi)])
-    # run in parallel
     else:
-        pool = mp.Pool(threads)
-        out = [[]] * n
-        for i, args in enumerate(zip(R, ln_rxi, ln_1plusxi)):
-            out[i] = pool.apply_async(
-                _xi2sig_single, args=(args), kwds={'idx':i})
-        pool.close()
-        pool.join()
-        # extract results
-        sigma = np.zeros((xi.shape[0],R.shape[-1]))
-        for i, x in enumerate(out):
-            sigma_j, j = x.get()
-            sigma[j] = sigma_j
-    if verbose:
-        t = time() - to
-        print(f'Calculated {n} surface densities in {t/60:.2f} min,' \
-              f' for an average time of {t/n:.2f} sec per call.')
-    if len(output_shape) == 3:
-        sigma = sigma.reshape(output_shape)
-        R = R.reshape(output_shape)
+        if verbose == 2:
+            print('Internally rearranging input data...')
+        # it's a little more complicated if they have 2 dimensions
+        if len(R.shape) == 1:
+            R = np.array([R for i in range(n)])
+        if len(r_xi_shape) == 1:
+            r_xi = np.array([r_xi for i in range(n)])
+        # do those cases in here
+        if len(xi_shape) == 3:
+            xi = np.vstack(xi)
+            # arrange r_xi to match xi's shape
+            if len(r_xi_shape) == 2:
+                r_xi = np.array([r_xi for i in range(xi_shape[0])])
+                r_xi = np.vstack(r_xi)
+            # arrange R
+            if len(R_shape) == 2:
+                if R.shape[0] == xi_shape[0]:
+                    R = np.vstack([[Ri for i in range(xi_shape[1])] for Ri in R])
+                else:
+                    R = np.vstack([[Ri for Ri in R] for i in range(xi_shape[0])])
+        # OK done with the massaging
+        ln_rxi = np.log(r_xi)
+        ln_1plusxi = np.log(1+xi)
+        if verbose:
+            print(f'Calculating {n} surface densities using {threads} threads.' \
+                ' This may take a while...')
+        to = time()
+        if threads == 1:
+            sigma = np.array(
+                [_xi2sig_single(*args) for args in zip(R, ln_rxi, ln_1plusxi)])
+        # run in parallel
+        else:
+            pool = mp.Pool(threads)
+            out = [[]] * n
+            for i, args in enumerate(zip(R, ln_rxi, ln_1plusxi)):
+                out[i] = pool.apply_async(
+                    _xi2sig_single, args=(args), kwds={'idx':i})
+            pool.close()
+            pool.join()
+            # extract results
+            sigma = np.zeros((xi.shape[0],R.shape[-1]))
+            for i, x in enumerate(out):
+                sigma_j, j = x.get()
+                sigma[j] = sigma_j
+        if verbose:
+            t = time() - to
+            print(f'Calculated {n} surface densities in {t/60:.2f} min,' \
+                f' for an average time of {t/n:.2f} sec per call.')
+        if len(output_shape) == 3:
+            sigma = sigma.reshape(output_shape)
+            R = R.reshape(output_shape)
     sigma = 2 * rho_m * R * sigma
     if full_output:
         return sigma, R

@@ -93,7 +93,7 @@ class BaseLensing(BaseCosmo):
         else:
             b = (self.cosmo.angular_diameter_distance_z1z2(self.z, z_s).to(u.Mpc) \
                  / self.cosmo.angular_diameter_distance(z_s).to(u.Mpc)).value
-        return np.max([np.zeros_like(b), b])
+        return np.max([np.zeros_like(b), b], axis=0)
 
     #@float_args
     def sigma_crit(self, z_s=None):
