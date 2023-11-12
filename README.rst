@@ -25,6 +25,7 @@ Change Log
 Version 1.4.4
 -------------
 * Fixed bug in the normalization of a 1-d surface density in ``xi2sigma``
+* Fixed bug whereby only one beta was returned
 
 Version 1.4.3
 -------------
