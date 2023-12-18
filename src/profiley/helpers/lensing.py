@@ -7,9 +7,7 @@ from .decorators import float_args
 
 
 class BaseLensing(BaseCosmo):
-
-    def __init__(self, z, z_s=None, cosmo=Planck15, frame='comoving',
-                 **kwargs):
+    def __init__(self, z, z_s=None, cosmo=Planck15, frame="comoving", **kwargs):
         """Base lensing calculations for Profile objects
 
         Parameters
@@ -30,15 +28,17 @@ class BaseLensing(BaseCosmo):
         try:
             z / 1
         except TypeError as e:
-            msg = 'argument `z` must be a float or an array of floats'
+            msg = "argument `z` must be a float or an array of floats"
             raise TypeError(msg) from e
         if z_s is not None:
             try:
                 z_s / 1
             except TypeError as e:
-                msg = 'argument `z_s` must be a float or an array of floats'
+                msg = "argument `z_s` must be a float or an array of floats"
                 raise TypeError(msg) from e
         super().__init__(cosmo=cosmo, frame=frame, **kwargs)
+        if not np.iterable(z):
+            z = np.array([z])
         self.z = z
         self._z_s = z_s
         self.cosmo = cosmo
@@ -55,7 +55,7 @@ class BaseLensing(BaseCosmo):
     def z_s(self):
         return self._z_s
 
-    #@float_args
+    # @float_args
     @z_s.setter
     def z_s(self, z_s):
         self._z_s = z_s
@@ -65,63 +65,66 @@ class BaseLensing(BaseCosmo):
     @property
     def Dl(self):
         if self._Dl is None:
-            self._Dl = self.cosmo.angular_diameter_distance(self.z).to(
-                u.Mpc).value
+            self._Dl = self.cosmo.angular_diameter_distance(self.z).to(u.Mpc).value
         return self._Dl
 
     @property
     def Dls(self):
         if self._Dls is None:
-            self._Dls = self.cosmo.angular_diameter_distance_z1z2(
-                self.z, self.z_s).to(u.Mpc).value
+            self._Dls = (
+                self.cosmo.angular_diameter_distance_z1z2(self.z, self.z_s)
+                .to(u.Mpc)
+                .value
+            )
         return self._Dls
 
     @property
     def Ds(self):
         if self._Ds is None:
-            self._Ds = self.cosmo.angular_diameter_distance(self.z_s).to(
-                u.Mpc).value
+            self._Ds = self.cosmo.angular_diameter_distance(self.z_s).to(u.Mpc).value
         return self._Ds
 
     ### methods ###
 
-    #@float_args
-    def beta(self, z_s=None):
+    # @float_args
+    def Dls_over_Ds(self, z_s=None):
         """max(0, Dls/Ds)"""
         if z_s is None:
             b = self.Dls / self.Ds
         else:
-            b = (self.cosmo.angular_diameter_distance_z1z2(self.z, z_s).to(u.Mpc) \
-                 / self.cosmo.angular_diameter_distance(z_s).to(u.Mpc)).value
+            b = (
+                self.cosmo.angular_diameter_distance_z1z2(self.z, z_s).to(u.Mpc)
+                / self.cosmo.angular_diameter_distance(z_s).to(u.Mpc)
+            ).value
         return np.max([np.zeros_like(b), b], axis=0)
 
-    #@float_args
+    # @float_args
     def sigma_crit(self, z_s=None):
         """Critical surface density, in Msun/Mpc^2"""
-        A = self._c**2 / (4*np.pi*self._G)
-        if self.frame == 'comoving':
-            A = A / (1+self.z)**2
-        return A / (self.Dl*self.beta(z_s=z_s))
+        A = self._c**2 / (4 * np.pi * self._G)
+        if self.frame == "comoving":
+            A = A / (1 + self.z) ** 2
+        return A / (self.Dl * self.Dls_over_Ds(z_s=z_s))
 
-    #@float_args
+    # @float_args
     def convergence(self, R, z_s=None, Roff=None, **kwargs):
         if Roff is None:
-            s = self.projected(R)
+            s = self.projected(R, **kwargs)
         else:
-            s = self.offset_projected(R, Roff)
+            s = self.offset_projected(R, Roff, **kwargs)
         if z_s is None:
             z_s = self.z_s
-        return s / self.sigma_crit(z_s=z_s, **kwargs)
+        return s / self.sigma_crit(z_s=z_s)
 
     def offset_convergence(self, R, Roff, z_s=None, **kwargs):
         if z_s is None:
             z_s = self.z_s
-        return self.offset_projected(R, Roff) \
-            / self.sigma_crit(z_s=z_s, **kwargs)
+        return self.offset_projected(R, Roff) / self.sigma_crit(z_s=z_s, **kwargs)
 
 
 class Lens(BaseCosmo):
     """Lens object class"""
+
     # should move some of what's in BaseLensing into here
     # then calling BaseLensing (perhaps just Lensing) should
     # create (or take) both a Lens and a Source objects
@@ -146,24 +149,37 @@ class Lens(BaseCosmo):
 
     ### methods ###
 
-    #@float_args
+    # @float_args
     def Dls(self, z_s):
         return self.cosmo.angular_diameter_distance_z1z2(self.z, z_s)
 
-    #@float_args
-    def sigma_crit(self, z_s, frame='comoving'):
-        assert frame in ('comoving', 'physical','proper')
-        A = self._c**2 / (4*np.pi*self._G)
-        if frame == 'comoving':
-            A = A / (1+self.z)**2
-        return A / (self.Dl*self.beta(z_s=z_s))
+    # @float_args
+    def sigma_crit(self, z_s, frame="comoving"):
+        assert frame in ("comoving", "physical", "proper")
+        A = self._c**2 / (4 * np.pi * self._G)
+        if frame == "comoving":
+            A = A / (1 + self.z) ** 2
+        return A / (self.Dl * self.Dls_over_Ds(z_s=z_s))
 
-    #@float_args
+    # @float_args
     def lensing_kernel(self, z_s):
         chi_z_s = self.cosmo.comoving_distance(z_s)
-        return (3/2 * self.cosmo.Om0 * self.cosmo.H0**2 \
-                * (1+z_s) / self.cosmo.H(z_s) * self.chi / self._c \
-                * (chi_z_s-self.chi) / chi_z_s).to(u.Mpc/u.s).value
+        return (
+            (
+                3
+                / 2
+                * self.cosmo.Om0
+                * self.cosmo.H0**2
+                * (1 + z_s)
+                / self.cosmo.H(z_s)
+                * self.chi
+                / self._c
+                * (chi_z_s - self.chi)
+                / chi_z_s
+            )
+            .to(u.Mpc / u.s)
+            .value
+        )
 
 
 class Source(BaseCosmo):
@@ -194,15 +210,28 @@ class Source(BaseCosmo):
     def Dls(self, z):
         return self.cosmo.angular_diameter_distance_z1z2(z, self.z_s)
 
-    def sigma_crit(self, z, frame='comoving'):
-        assert frame in ('comoving', 'physical','proper')
-        A = self._c**2 / (4*np.pi*self._G)
-        if frame == 'comoving':
-            A = A / (1+z)**2
-        return A / (self.angular_diameter_distance(z)*self.beta(z_s=z_s))
+    def sigma_crit(self, z, frame="comoving"):
+        assert frame in ("comoving", "physical", "proper")
+        A = self._c**2 / (4 * np.pi * self._G)
+        if frame == "comoving":
+            A = A / (1 + z) ** 2
+        return A / (self.angular_diameter_distance(z) * self.Dls_over_Ds(z_s=self.z_s))
 
     def lensing_kernel(self, z):
         chi_z = self.cosmo.comoving_distance(z)
-        return (3/2 * self.cosmo.Om0 * self.cosmo.H0**2 \
-                * (1+self.z_s) / self.cosmo.H(self.z_s) * chi_z / self._c \
-                * (self.chi-chi_z) / self.chi).to(u.Mpc/u.s).value
+        return (
+            (
+                3
+                / 2
+                * self.cosmo.Om0
+                * self.cosmo.H0**2
+                * (1 + self.z_s)
+                / self.cosmo.H(self.z_s)
+                * chi_z
+                / self._c
+                * (self.chi - chi_z)
+                / self.chi
+            )
+            .to(u.Mpc / u.s)
+            .value
+        )
