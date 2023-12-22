@@ -176,32 +176,120 @@ class Profile(BaseLensing):
 
     ### methods ###
 
-    def rdelta(self, overdensity, background, rtol=1e-3):
-        """Radius enclosing a specified overdensity
+    def mdelta(self, overdensity: float, background: str, **kwargs):
+        """Calculate the mass out to a radius containing a specified overdensity
 
-        Works for radii between 1 pc and 100 Mpc
+        See ``rdelta`` for help with parameters
+
+        Returns
+        -------
+        mdelta : np.ndarray
+            masses within spheres of radius ``rdelta``
+        rdelta : np.ndarray
+            radii enclosing the specified overdensity
+        density_err : np.ndarray, optional
+            fractional error in the density at the returned radii. Only returned if ``return_errors==True``
         """
-        assert background in "cm"
-        # this may bring memory problems at some point
-        r_test = np.logspace(-6, 2, 1000)
-        rho_test = self.enclosed(r_test)
-        print("rho_test", rho_test.shape)
-        rho_bg = overdensity * (
-            self.mean_density if background == "m" else self.critical_density
-        )
-        print("rho_bg", rho_bg.shape)
-        # return this if some tolerance is met -- need to go updating for each element!
-        err = np.abs(rho_test - rho_bg) / rho_bg
-        # Find the indices of the minimum values along axis=0 for each cell
-        closest = np.argmin(err, axis=0)
-        # Create index arrays for each axis
-        index_arrays = np.indices(closest.shape)
-        # Use the obtained indices to extract corresponding elements from arr
-        indices = [closest] + list(index_arrays)
-        print("indices =", indices)
-        err_best = err[tuple(indices)]
-        bad = err_best > rtol
-        print("err =", err_best, err_best.shape, bad.shape, bad.size, bad.sum())
+        r = self.rdelta(overdensity, background, **kwargs)
+        if kwargs.get("return_errors", False):
+            r, err = r
+        m = 4 * np.pi * r**3 * overdensity * self.get_rho_bg(background) / 3
+        if kwargs.get("return_errors", False):
+            return m, r, err
+        return m, r
+
+    def rdelta(
+        self,
+        overdensity: float,
+        background: str,
+        *,
+        rtol: float = 0.001,
+        trial_range: float = 0.1,
+        trial_size: int = 20,
+        max_trials: int = 100,
+        log_rmin: float = -10,
+        integral_samples: int = 1000,
+        return_errors: bool = False,
+    ):
+        """
+        Calculate the radius within which the density equals a specified overdensity
+
+        Parameters
+        ----------
+        overdensity : float
+            The desired overdensity
+        background : 'c' or 'm'
+            Whether to use the critical or mean density as a reference
+        rtol : float, optional
+            The relative tolerance for convergence. The default is 0.001
+        trial_range : float, optional
+            The fractional range to explore around the best radius in each iteration. Use a smaller number for smaller tolerances. The default is 0.1, corresponding to a 10% search in each iteration
+        trial_size : int, optional
+            The number of radii to try in each iteration. The default is 20
+        max_trials : int, optional
+            The maximum number of trials to perform. If convergence is not reached a ``RuntimeWarning`` is raised. The default is 100
+        log_rmin : float, optional
+            The minimum log10 radius to use for profile integration. See ``profile`` for details. The default is -10
+        integral_samples : int, optional
+            number of samples to use in the integration. See ``profile`` for details. The default is 1000
+        return_errors : bool, optional
+            whether to return fractional errors in the density at the returned radii. Default is False
+
+        Returns
+        -------
+        rdelta : np.ndarray
+            The radius containing the specified overdenstiy
+        density_err : np.ndarray, optional
+            fractional error in the density at the returned radii. Only returned if ``return_errors==True``
+
+        Each returned array has a shape equal to ``self.shape``.
+        """
+        if overdensity == self.overdensity and background == self.background:
+            if return_errors:
+                return self.mass, self.c, np.zeros(self.shape)
+            return self.mass, self.c
+        # first integrate out to self.radius to see when we need a larger
+        # or smaller radius
+        rho_bg = self.get_rho_bg(background) * np.ones(self.shape)
+        target = overdensity * rho_bg
+        Rdelta = np.zeros(self.radius.shape)
+        # need this to be able to update Rdelta instead of just getting a view
+        rng = np.arange(Rdelta.size, dtype=int)
+        dims_to_expand = tuple(range(1, len(self.shape) + 1))
+        R = np.expand_dims(np.logspace(-1, 1, trial_size), dims_to_expand) * self.radius
+        i = 0
+        while np.any(Rdelta == 0):
+            remaining = Rdelta == 0
+            # should probably mask R in here too so we reduce the number of
+            # integrals
+            enclosed = self.enclosed(R, log_rmin, integral_samples)
+            err = np.abs(enclosed - target) / target
+            # all of this should happen only with those that have err > rtol
+            minerr = np.min(err, axis=0)
+            minmask = err == minerr
+            # set everything except the best radii to zero
+            Rbest = np.sum(R * minmask, axis=0)
+            good = minerr < rtol
+            Rdelta = Rdelta + Rbest * remaining * good
+            # update R to the closest match found so far
+            R = R * good + Rbest * (~good) * np.expand_dims(
+                np.linspace(1 - trial_range, 1 + trial_range, trial_size),
+                dims_to_expand,
+            )
+            i += 1
+            if i == max_trials:
+                # this to return the best radius we found, even if it does not
+                # meet rtol
+                Rdelta = Rdelta + Rbest * remaining
+                wrn = (
+                    f"Could not converge to within rtol after {max_trials} iterations."
+                )
+                warnings.warn(wrn, RuntimeWarning)
+                break
+        Rdelta = Rdelta.reshape(self.shape)
+        if return_errors:
+            return Rdelta, minerr
+        return Rdelta
 
     @inMpc
     @array
