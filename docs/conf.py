@@ -20,10 +20,16 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 # The full version, including alpha/beta/rc tags
-release = "1.4.0"
+with open("../src/profiley/__init__.py") as f:
+    for line in f:
+        if not line.startswith("__version__"):
+            continue
+        release = line.split("=")[-1].strip().strip('"')
+        break
+
 
 project = f"profiley v{release}"
-copyright = "2020-2022, Cristóbal Sifón"
+copyright = "2020-2023, Cristóbal Sifón"
 author = "Cristóbal Sifón"
 
 
@@ -38,6 +44,7 @@ extensions = [
     "nbsphinx",
     "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.doctest",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
@@ -49,6 +56,7 @@ extensions = [
 
 autoapi_dirs = ["../src/profiley/"]
 autoapi_add_toctree_entry = False
+autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

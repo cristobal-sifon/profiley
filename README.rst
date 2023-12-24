@@ -22,6 +22,11 @@ References
 Change Log
 ==========
 
+Version 1.5.0
+-------------
+* Added ``WebskyNFW`` profile
+* Fixed bug in ``mdelta`` method, plus it is now a ``Profile`` method inherited by all profiles.
+
 Version 1.4.4
 -------------
 * Fixed bug in the normalization of a 1-d surface density in ``xi2sigma``

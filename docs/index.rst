@@ -73,6 +73,7 @@ The following profiles are available in ``profiley``:
 * `Truncated NFW <profiles/nfw/index.html#truncated-nfw-profile>`_
 * `Hernquist <profiles/nfw/index.html#hernquist-profile>`_
 * `Einasto <profiles/einasto/index.html>`_
+* `Websky NFW <profiles/nfw/index.html#webskynfw>`_
 
 
 License

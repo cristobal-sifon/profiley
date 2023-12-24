@@ -30,7 +30,7 @@ The code should look as follows: ::
 That's it! The ``__init__()`` method needs only two lines of code (in addition 
 to attribute definitions). There are three things to pay attention to:
 
-* The first line is necessary to allow ``profiley`` to automatically handle arbitrary shapes, through the definition of a ``_shape`` attribute, and must be called before ``super``. Note that ``set_shape`` takes only one argument (besides ``self``) - the *product* of the arguments in ``__init__``. That is, if  the arguments are arrays, their dimensions must be such that a product can be carried out without any manipulation.
+* The first line is necessary to allow ``profiley`` to automatically handle arbitrary shapes, through the definition of a ``_shape`` attribute, and must be called before ``super``. Note that ``_set_shape`` takes only one argument (besides ``self``): the *product* of the arguments in ``__init__``. That is, if  the arguments are arrays, their dimensions must be such that a product can be carried out without any manipulation.
 * The ``array`` decorator allows manipulation of arrays of arbitrary shape, as specified above.
 * The ``inMpc`` decorator is optional and allows the method to receive an astropy ``Quantity`` object, which will be converted to Mpc before calculating the profile.
 
