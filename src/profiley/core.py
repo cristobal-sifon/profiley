@@ -165,6 +165,10 @@ class Profile(BaseLensing):
             raise ValueError(f"overdensity must be positive; received {overdensity}")
         return
 
+    def _expand_dims(self, x):
+        """Add the appropriate number of dimensions to the end of x"""
+        return np.expand_dims(x, tuple(range(-len(self.shape), 0)))
+
     def _set_shape(self, args_product):
         if hasattr(self, "shape"):
             msg = "attribute shape already set, cannot be overwritten"
@@ -329,8 +333,9 @@ class Profile(BaseLensing):
         return 4 * np.pi * simps(R_int**2 * self.profile(R_int), R_int, axis=0)
 
     @inMpc
-    @array
-    def projected(self, R: np.ndarray, log_rmin=-10, log_rmax=6, integral_samples=200):
+    def projected(
+        self, R: np.ndarray, *, log_rmin=-10, log_rmax=6, integral_samples=200
+    ):
         """Line of sight projected profile, calculated numerically
 
         Parameters
@@ -364,21 +369,15 @@ class Profile(BaseLensing):
             "argument integral_samples must be int, received"
             f" {integral_samples} ({type(integral_samples)})"
         )
-        R_los = np.logspace(log_rmin, log_rmax, integral_samples)[:, None]
-        R = np.transpose(
-            [
-                np.hypot(*np.meshgrid(R_los[:, i], R[:, 0]))
-                for i in range(R_los.shape[1])
-            ],
-            axes=(1, 2, 0),
-        )
-        return 2 * simps(self.profile(R), R_los[None], axis=1)
+        R_los = np.logspace(log_rmin, log_rmax, integral_samples)
+        R = (R_los**2 + R[..., None] ** 2) ** 0.5
+        return 2 * simps(self.profile(R), R_los, axis=len(R.shape) - 1)
 
     @inMpc
-    @array
     def projected_cumulative(
         self,
         R: np.ndarray,
+        *,
         log_rmin: float = -10,
         left_samples: int = 100,
         resampling: int = 20,
@@ -428,27 +427,32 @@ class Profile(BaseLensing):
             "argument resampling must be int, received"
             f" {resampling} ({type(resampling)})"
         )
-        # for convenience
-        logR = np.log10(R[:, 0])
-        # resample R
-        Ro = np.vstack(
+        logR = np.log10(R)
+        # resample R with left_samples to the left and resampling values between each
+        # this should therefore be a 1d array; it should be easy to the take specifically
+        # the input radii from the resulting integral
+        Ro = np.hstack(
             [
-                np.zeros(R.shape[1]),
-                np.logspace(log_rmin, logR[0], left_samples, endpoint=False)[:, None],
-                np.concatenate(
+                [0],
+                np.logspace(log_rmin, logR[0], left_samples, endpoint=False),
+                np.hstack(
                     [
                         np.logspace(logR[i - 1], logR[i], resampling, endpoint=False)
                         for i in range(1, R.shape[0])
                     ]
-                )[:, None],
-                R.max() * np.ones(R.shape[1]),
+                ),
+                [R.max()],
             ]
         )
+        # these correspond to the indices where the original radii are stored
         j = np.arange(1 + left_samples, Ro.shape[0], resampling)
         integ = cumtrapz(
-            Ro * self.projected(Ro, log_rmin=log_rmin, **kwargs), Ro, initial=0, axis=0
+            self._expand_dims(Ro) * self.projected(Ro, log_rmin=log_rmin, **kwargs),
+            Ro,
+            initial=0,
+            axis=0,
         )
-        return 2 * integ[j] / R**2
+        return 2 * integ[j] / self._expand_dims(R) ** 2
 
     def projected_excess(
         self,

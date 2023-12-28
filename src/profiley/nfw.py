@@ -389,9 +389,13 @@ class Hernquist(Profile):
         self.mass = mass
         self.c = c
 
+    @inMpc
+    @array
     def profile(self, r: np.ndarray):
         return
 
+    @inMpc
+    @array
     def mass_enclosed(self, r: np.ndarray, **kwargs):
         """The mass enclosed within a radius :math:`r` is
 
