@@ -51,7 +51,7 @@ class BaseCosmo:
     def mean_density(self):
         """Mean density in Msun/Mpc^3"""
         self._mean_density = (
-            (self.cosmo.critical_density0 * self.cosmo.Om0)
+            (self.cosmo.critical_density(self.z) * self.cosmo.Om0)
             .to(u.Msun / u.Mpc**3)
             .value
         )
