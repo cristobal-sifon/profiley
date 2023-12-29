@@ -13,9 +13,9 @@ def test_projected_1d():
     nfw = NFW(m, c, z, overdensity=od, background=bg, cosmo=Planck15)
     gnfw = GNFW(m, c, z, overdensity=od, background=bg, cosmo=Planck15)
     R = np.logspace(-2, 1, 25)
+    assert np.allclose(nfw.profile(R), gnfw.profile(R))
     rtol = 1e-3
     atol = 1e12
-    assert np.allclose(nfw.profile(R), gnfw.profile(R), rtol=rtol, atol=atol)
     assert np.allclose(nfw.projected(R), gnfw.projected(R), rtol=rtol, atol=atol)
     assert np.allclose(
         nfw.projected_cumulative(R), gnfw.projected_cumulative(R), rtol=rtol, atol=atol
@@ -32,9 +32,9 @@ def test_projected_2d():
     nfw = NFW(m, c, z, overdensity=od, background=bg, cosmo=Planck15)
     gnfw = GNFW(m, c, z, overdensity=od, background=bg, cosmo=Planck15)
     R = np.logspace(-2, 1, 25)
+    assert np.allclose(nfw.profile(R), gnfw.profile(R))
     rtol = 1e-3
     atol = 1e12
-    assert np.allclose(nfw.profile(R), gnfw.profile(R), rtol=rtol, atol=atol)
     assert np.allclose(nfw.projected(R), gnfw.projected(R), rtol=rtol, atol=atol)
     assert np.allclose(
         nfw.projected_cumulative(R), gnfw.projected_cumulative(R), rtol=rtol, atol=atol
@@ -51,9 +51,9 @@ def test_projected_3d():
     nfw = NFW(m, c, z, overdensity=od, background=bg, cosmo=Planck15)
     gnfw = GNFW(m, c, z, overdensity=od, background=bg, cosmo=Planck15)
     R = np.logspace(-2, 1, 25)
+    assert np.allclose(nfw.profile(R), gnfw.profile(R))
     rtol = 1e-3
     atol = 1e12
-    assert np.allclose(nfw.profile(R), gnfw.profile(R), rtol=rtol, atol=atol)
     assert np.allclose(nfw.projected(R), gnfw.projected(R), rtol=rtol, atol=atol)
     assert np.allclose(
         nfw.projected_cumulative(R), gnfw.projected_cumulative(R), rtol=rtol, atol=atol
