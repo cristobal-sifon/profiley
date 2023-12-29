@@ -5,8 +5,8 @@ import warnings
 
 
 def array(f):
-    """Turn the first argument (assumed to be `R`) into a 2-d array
-    to allow multiple profiles to be defined in one call
+    """Add dimensions to the first argument, assumed to be the radial coordinate at
+    which a given profile will be calculated, to match the ``Profile`` object shape
     """
 
     @wraps(f)
@@ -14,16 +14,10 @@ def array(f):
         args = list(args)
         # args[0] is self
         self_shape = getattr(args[0], "shape")
-        R_shape = getattr(args[1], "shape")
-        # while len(args[1].shape) < len(R_shape) + len(self_shape):
-        #     args[1] = np.expand_dims(args[1], -1)
-        args[1] = np.expand_dims(args[1], tuple(range(-len(self_shape), 0)))
-        """
-        dims = getattr(args[0], '_dimensions')
-        if not np.iterable(args[idx]):
-            args[idx] = np.array([args[idx]])
-        args[idx] = np.reshape(args[idx], (args[idx].size,*dims))
-        """
+        ndim = len(self_shape)
+        for i in range(1, ndim + 1):
+            if args[1].shape[-i] != self_shape:
+                args[1] = args[1][..., None]
         return f(*args, **kwargs)
 
     return decorated

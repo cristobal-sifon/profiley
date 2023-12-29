@@ -4,7 +4,8 @@ from profiley.nfw import GNFW, NFW
 
 
 def test_projected_1d():
-    """Test numerical projection for 1d profile objects comparing the numerical GNFW to the analytical NFW"""
+    """Test numerical projection for 1d profile objects comparing the
+    numerical GNFW to the analytical NFW"""
     m = np.logspace(13, 15, 5)
     z = 0.5
     c = 5
@@ -23,7 +24,8 @@ def test_projected_1d():
 
 
 def test_projected_2d():
-    """Test numerical projection for 2d profile objects comparing the numerical GNFW to the analytical NFW"""
+    """Test numerical projection for 2d profile objects comparing the
+    numerical GNFW to the analytical NFW"""
     m = np.logspace(13, 15, 5)
     z = np.linspace(0, 1, 3)[:, None]
     c = 5
@@ -42,7 +44,8 @@ def test_projected_2d():
 
 
 def test_projected_3d():
-    """Test numerical projection for 3d profile objects comparing the numerical GNFW to the analytical NFW"""
+    """Test numerical projection for 3d profile objects comparing the
+    numerical GNFW to the analytical NFW"""
     m = np.logspace(13, 15, 5)
     z = np.linspace(0, 1, 3)[:, None]
     c = np.linspace(3, 7, 2)[:, None, None]

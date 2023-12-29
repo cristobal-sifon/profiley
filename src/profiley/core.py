@@ -296,7 +296,6 @@ class Profile(BaseLensing):
         return Rdelta
 
     @inMpc
-    @array
     def enclosed(self, r: np.ndarray, log_rmin=-10, integral_samples=1000):
         """Mean value of the profile within a radius r,
 
@@ -309,7 +308,6 @@ class Profile(BaseLensing):
         ) / (4 / 3 * np.pi * r**3)
 
     @inMpc
-    @array
     def mass_enclosed(self, r: np.ndarray, log_rmin=-10, integral_samples=1000):
         """Mass within a radius r,
 
