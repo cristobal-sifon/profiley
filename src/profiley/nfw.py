@@ -428,9 +428,8 @@ class WebskyNFW(BaseNFW):
         \\end{cases}
 
     By default this profile is initiated with ``overdensity=200`` and
-    ``background="m"``. If different parameters are specified this means
-    masses and concentrations are defined as such, but the profile is
-    still defined with respect to r200m.
+    ``background="m"``. If different parameters are specified the resulting
+    profile will not be identical to the Websky implementation.
 
     The Websky simulations adopt a concentration c200m=7 fixed at all
     masses and redshifts, but the concentration does not have a default
@@ -438,9 +437,11 @@ class WebskyNFW(BaseNFW):
     the overdensity used when initializing the object).
     """
 
-    def __init__(self, mass, c, z, alpha=2, **kwargs):
+    def __init__(self, mass, c, z, alpha=2, overdensity=200, background="m", **kwargs):
         self._set_shape(mass * c * z * alpha)
-        super().__init__(mass, c, z, **kwargs)
+        super().__init__(
+            mass, c, z, overdensity=overdensity, background=background, **kwargs
+        )
         self.alpha = alpha
 
     ### main methods ###
@@ -450,18 +451,11 @@ class WebskyNFW(BaseNFW):
     def profile(self, r):
         """Three-dimensional density profile"""
         x = r / self.rs
-        rho_200m = self.mean_density
-        if self.overdensity == 200 and self.background == "m":
-            r200m = self.radius
-            delta_c = self.delta_c
-        else:
-            r200m = self.rdelta(200, "m")
-            c200m = r200m / self.rs
-            delta_c = self._f_delta_c(c200m, 200)
         return (
-            rho_200m
-            * delta_c
+            self.rho_bg
+            * self.delta_c
             / (x * (1 + x) ** 2)
-            * (r / r200m) ** (-self.alpha * ((r200m < r) & (r < 2 * r200m)))
-            * (r < 2 * r200m)
+            * (r / self.radius)
+            ** (-self.alpha * ((self.radius < r) & (r < 2 * self.radius)))
+            * (r < 2 * self.radius)
         )
