@@ -31,7 +31,7 @@ class Profile(BaseLensing):
 
     .. math::
 
-        f(r, a, b) = a * r**b
+        f(r, a, b) = a * r^b
 
     ::
 
@@ -50,7 +50,7 @@ class Profile(BaseLensing):
     That's it! The ``__init__()`` method needs only two lines of code
     (in addition to attribute definitions). The last line is necessary
     to allow ``profiley`` to automatically handle arbitrary shapes,
-    through the definition of a ``_shape`` attribute. Note that
+    through the definition of a ``shape`` attribute. Note that
     ``_set_shape`` takes only one argument (besides ``self``) - the
     *product* of the class arguments. That is, if the arguments are
     arrays, their dimensions must be such that a product can be carried
@@ -74,23 +74,11 @@ class Profile(BaseLensing):
     exist, but they will be calculated numerically, so they may be
     somewhat slower depending on the precision required.
 
-    Deprecated methods
-    ..................
-
-    The following methods are deprecated as of ``v1.3.0`` and will be
-    removed in a future version. They should be replaced as follows:
-
-        surface_density --> projected
-        enclosed_surface_density --> projected_cumulative
-        excess_surface_density --> projected_excess
-
-    and analogously with ``offset`` methods.
-
     Cosmology
     ---------
 
     All ``Profile`` objects contain all cosmological information with
-    they have been initialized through the ``self.cosmo`` attribute,
+    which they have been initialized through the ``self.cosmo`` attribute,
     which can be any ``astropy.cosmology.FLRW`` object.
 
     """
@@ -176,7 +164,7 @@ class Profile(BaseLensing):
         if np.iterable(args_product):
             self._shape = args_product.shape
         else:
-            self._shape = (1,)
+            self._shape = (0,)
 
     ### methods ###
 
@@ -301,7 +289,7 @@ class Profile(BaseLensing):
 
         .. math::
 
-            \\bar\\rho(r) = \\frac1{r^3} \\int_0^r s^2 \\rho(s)\\,ds
+            \\bar\\rho(R) = \\frac3{R^3} \\int_0^R r^2 \\rho(r)\\,dr
         """
         return self.mass_enclosed(
             r, log_rmin=log_rmin, integral_samples=integral_samples
@@ -309,7 +297,7 @@ class Profile(BaseLensing):
 
     @inMpc
     def mass_enclosed(self, r: np.ndarray, log_rmin=-10, integral_samples=1000):
-        """Mass within a radius r,
+        """Spherical integral within a radius r,
 
         .. math::
 
@@ -332,8 +320,13 @@ class Profile(BaseLensing):
 
     @inMpc
     def projected(
-        self, R: np.ndarray, *, log_rmin=-10, log_rmax=6, integral_samples=200
-    ):
+        self,
+        R: np.ndarray,
+        *,
+        log_rmin: float = -10,
+        log_rmax: float = 6,
+        integral_samples: int = 200,
+    ) -> np.ndarray:
         """Line of sight projected profile, calculated numerically
 
         Parameters
@@ -380,7 +373,7 @@ class Profile(BaseLensing):
         left_samples: int = 100,
         resampling: int = 20,
         **kwargs,
-    ):
+    ) -> np.ndarray:
         """Cumulative projected profile within R, calculated
         numerically
 
@@ -455,12 +448,12 @@ class Profile(BaseLensing):
     def projected_excess(
         self,
         R: np.ndarray,
-        log_rmin=-10,
-        log_rmax=6,
-        integral_samples=200,
-        left_samples=100,
-        resampling=20,
-    ):
+        log_rmin: float = -10,
+        log_rmax: float = 6,
+        integral_samples: int = 200,
+        left_samples: int = 100,
+        resampling: int = 20,
+    ) -> np.ndarray:
         """Cumulative projected profile file excess at projected
         distance(s) R, defined as
 
@@ -498,7 +491,15 @@ class Profile(BaseLensing):
         )
         return s1 - s2
 
-    def offset(self, func, R, Roff, theta_samples=360, weights=None, **kwargs):
+    def offset(
+        self,
+        func: callable,
+        R: np.ndarray,
+        Roff: np.ndarray,
+        theta_samples: int = 360,
+        weights: np.ndarray = None,
+        **kwargs,
+    ) -> np.ndarray:
         """Calcuate any profile with a reference point different
         from its center
 
@@ -593,127 +594,3 @@ class Profile(BaseLensing):
         """Alias for ``offset(projected_excess, R, Roff,
         **kwargs)``"""
         return self.offset(self.projected_excess, R, Roff, **kwargs)
-
-    def _fourier(self, rmax=10, dr=0.1):
-        """This is not working yet! Might just need to fall back to quad"""
-        r = np.arange(dr, rmax, dr)
-        f = self.profile(r)
-        # compute Fourier transform by numpy's FFT function
-        g = np.fft.fft(f)
-        print("g =", g.shape)
-        # frequency normalization factor is 2*np.pi/dt
-        k = np.fft.fftfreq(f.size) * 2 * np.pi / dr
-        # in order to get a discretisation of the continuous
-        # Fourier transform we need to multiply g by a phase factor
-        g = g * dr * np.exp(1j * k[:, None] * rmax) / (2 * np.pi) ** 0.5
-        return k, g
-
-    def volume(self, r: np.ndarray):
-        return 4 * np.pi * r**3
-
-    # def twohalo(self, cosmo, bias, func, R, logm=np.logspace(12,16,41),
-    #             bias_norm=1, **kwargs):
-    def _twohalo(
-        self,
-        cosmo,
-        offset_func,
-        R,
-        logm_2h=np.logspace(12, 16, 41),
-        z_2h=np.linspace(0, 2, 21),
-        **kwargs,
-    ):
-        """Calculate the two-halo term associated with the profile
-
-        Parameters
-        ----------
-        cosmo : `pyccl.Cosmology` object
-        offset_func : callable or str
-            if callable, it must be the offset version of the
-            function in question. For instance, if one is
-            modeling the convergence, the function supplied
-            must be the offset convergence.
-        R : np.ndarray
-        logm : np.ndarray, optional
-            masses over which to calculate the 2h term. If not
-            specified, the masses used when defining the profile will be used.
-
-        Notes
-        -----
-        kwargs are passed to the function to be called. If the function
-        to be calculated is the convergence, the source redshift must
-        be supplied
-        """
-        if not has_ccl:
-            msg = "Core Cosmology Library (CCL) required for two halo" " calculations"
-            raise ModuleNotFoundError(msg)
-        assert isinstance(cosmo, ccl.Cosmology)
-        # assert isinstance(bias, ccl.halos.HaloBias)
-        # which function are we using?
-        _valid_funcs = (
-            "esd",
-            "kappa",
-            "sigma",
-            "convergence",
-            "projected",
-            "projected_cumulative",
-            "projected_excess",
-            "enclosed_surface_density",
-            "excess_surface_density",
-            "mass_enclosed",
-            "surface_density",
-        )
-        if isinstance(offset_func, str):
-            assert (
-                offset_func in _valid_funcs
-            ), f"offset_func must be one of {_valid_funcs}"
-            if offset_func in ("sigma", "projected", "surface_density"):
-                offset_func = self.offset_projected
-            elif offset_func in ("projected_cumulative", "enclosed_surface_density"):
-                offset_func = self.offset_projected_cumulative
-            elif offset_func in ("esd", "projected_excess", "excess_surface_density"):
-                offset_func = self.offset_projected_excess
-            elif offset_func in ("kappa", "convergence"):
-                offset_func = self.offset_convergence
-        else:
-            assert callable(
-                offset_func
-            ), "argument offset_func must be a string or callable"
-            assert offset_func.__name__.startswith("offset"), (
-                "if argument offset_func is a function as opposed to"
-                "a string, it must be the offset version of the"
-                "function of interest."
-            )
-        # for each distance Ri, calculate the contribution from
-        # all halos that will have some contribution at that distance
-        # In order to speed this up a little, consider I don't need
-        # to calculate the offset profile for all halos at all distances
-        # but only for those who are close enough to that distance
-        # So probably what I actually need to do is just calculate
-        # for a grid in Roff and then move that to the required distance.
-        # For example,
-        # for i, Ri in R:
-        #     twoh = offset_func(R, R[:i+1], **kwargs)
-        return
-
-    ### auxiliary methods to test integration performance ###
-
-    @inMpc
-    @array
-    def _quad_projected(self, R):
-        """Not yet implemented"""
-        integrand = lambda r, Ro: self.profile((r**2 + Ro**2) ** 0.5)
-        return np.array(
-            [[quad(integrand, 0, np.inf, args=(Rij,)) for Rij in Ri] for Ri in R]
-        )
-
-    @inMpc
-    @array
-    def _test_integration(self, R, output=None):
-        """Test the fast-integration methods against the slow
-        but accurate quad function
-
-        Not yet implemented
-        """
-        qsd = self.quad_projected(R)
-        sd = self.projected(R)
-        return
