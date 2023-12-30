@@ -147,7 +147,35 @@ For more details, see the `Examples
 
 In fact, the latter implementation is about an order of magnitude faster
 than the ``Profile`` method described above, and should be preferred for
-the time being.
+the time being. The current methods will be replaced by this implementation in the future.
+
+
+A note on the radial coordinate
++++++++++++++++++++++++++++++++
+
+All examples in these docs employ one-dimensional radial arrays, ``R``, to calculate profiles. In fact, ``profiley`` can manage ``R`` of any shape. The resulting profiles will depend on the shape of ``R``. Perhaps the rule is best illustrated with a few examples. Here we assume that ``p`` is a ``profiley`` object with ``shape=(12, 7, 5)``. For instance,
+
+.. code-block:: python
+
+    mass = np.logspace(14, 15, 5)
+    concentration = np.linspace(2, 9, 7)
+    z = np.linspace(0, 1, 12)
+    p = NFW(mass, concentration[:,None], z[:,None,None])
+
+The shape of the result of any of ``p``'s `profile methods <profiles/Profile/index.html>`_ will be as follows:
+
++--------------+---------------------+
+| ``R.shape``  | profile shape       |
++==============+=====================+
+| ``(25,)``    | ``(25,12,7,5)``     |
++--------------+---------------------+
+| ``(25,100)`` | ``(25,100,12,7,5)`` |
++--------------+---------------------+
+| ``(25,12)``  | ``(25,12,7,5)``     |
++--------------+---------------------+
+
+Etc. In words, dimensions will be added to ``R`` to the extent that they are needed to be able to multiply ``R`` with an array of shape ``p.shape``. Exceptional situations, e.g., when the number of radial elements (or the last dimension) is equal to the first element of ``p.shape`` but it is not meant to represent one radial vector per profile, will not behave as expected. Such fringe cases must be appropriately handled by the user, but should generally be avoided.
+
 
 .. inheritance:
 
