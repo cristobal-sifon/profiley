@@ -61,3 +61,22 @@ def test_projected_3d():
     assert np.allclose(
         nfw.projected_cumulative(R), gnfw.projected_cumulative(R), rtol=rtol, atol=atol
     )
+
+
+def test_mdelta():
+    m = np.logspace(13, 15, 5)
+    z = np.linspace(0, 1, 3)[:, None]
+    c = np.linspace(3, 7, 2)[:, None, None]
+    # default args should be sufficient to reach 1%
+    rtol = 0.01
+    nfw_500c = NFW(m, c, z, overdensity=500, background="c", cosmo=Planck15)
+    m200m, r200m, density_errors = nfw_500c.mdelta(
+        200, "m", rtol=rtol, return_errors=True
+    )
+    assert np.all(density_errors < rtol)
+    nfw_200m = NFW(
+        m200m, r200m / nfw_500c.rs, z, overdensity=200, background="m", cosmo=Planck15
+    )
+    r = np.logspace(-2, 1, 100)
+    # we don't care about atol so setting to a large value
+    assert np.allclose(nfw_200m.profile(r), nfw_500c.profile(r), rtol=rtol, atol=1e20)
