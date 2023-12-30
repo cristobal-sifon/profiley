@@ -13,11 +13,20 @@ def array(f):
     def decorated(*args, **kwargs):
         args = list(args)
         # args[0] is self
-        self_shape = getattr(args[0], "shape")
-        ndim = len(self_shape)
-        for i in range(1, ndim + 1):
-            if args[1].shape[-i] != self_shape:
-                args[1] = args[1][..., None]
+        shape = getattr(args[0], "shape")
+        ndim = len(shape)
+        # if R is 1d it's easy, just add all dimensions
+        if args[1].ndim == 1:
+            args[1] = np.expand_dims(args[1], tuple(range(-ndim, 0)))
+        else:
+            ones = np.ones(shape)
+            while True:
+                try:
+                    args[1] * ones
+                except ValueError:
+                    args[1] = args[1][..., None]
+                else:
+                    break
         return f(*args, **kwargs)
 
     return decorated
