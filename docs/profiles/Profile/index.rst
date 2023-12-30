@@ -2,15 +2,19 @@ The ``Profile`` base class
 ==========================
 
 All profiles in ``profiley`` inherit from the ``Profile`` base class, which
-implements numerical calculation of all methods, starting from a ``profile``
-method in which the three-dimensional profile is calculated. The ``Profile``
-class allows for all profiles to have a unique, simple API. See all implemented
+implements numerical calculations of all methods, starting from a ``profile``
+method in which the three-dimensional profile is defined. The ``Profile`` base
+class allows for all profiles to have a common, simple API. See all implemented
 profiles `here <../index.html>`_.
 
 +-------------------------------------------------------------------------------------------------------------+
 | Methods defined in this class                                                                               |
 +=======================================+=====================================================================+
 | ``profile(R)``                        | three-dimensional profile                                           |
++---------------------------------------+---------------------------------------------------------------------+
+| ``enclosed(R)``                       | mean value within ``R``                                             |
++---------------------------------------+---------------------------------------------------------------------+
+| ``mass_enclosed(R)``                  | spherical integral within ``R``                                     |
 +---------------------------------------+---------------------------------------------------------------------+
 | ``projected(R, **kwargs)``            | Line-of-sight projected profile                                     |
 +---------------------------------------+---------------------------------------------------------------------+
@@ -31,6 +35,26 @@ Numerical profile projections
 
 If the projections of a given profile do not have analytical forms, they are
 calculated by numerical integration, using ``scipy.integrate.simps``.
+
+Mass enclosed
+-------------
+
+Spherical integral within a radius ``R``. For a density profile this corresponds
+to the enclosed mass:
+
+.. math::
+
+    M(<R) = \int_{V(<R)}d^3r\,\rho(r) = 4\pi\int_0^R dr\,r^2\rho(r)
+
+
+Enclosed distribution
+---------------------
+
+Mean value of the profile within the specified radius:
+
+.. math::
+
+    \bar\rho(R) = \frac{\int_{V(<R)} d^3r\,\rho(r)}{\int_{V(<R)} d^3r}
 
 Projected profile
 -----------------
