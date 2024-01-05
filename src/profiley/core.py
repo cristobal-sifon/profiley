@@ -254,8 +254,10 @@ class Profile(BaseLensing):
             remaining = Rdelta == 0
             # should probably mask R in here too so we reduce the number of
             # integrals
-            enclosed = self.enclosed(R, log_rmin, integral_samples)
-            err = np.abs(enclosed - target) / target
+            cumul = self.cumulative(
+                R, log_rmin=log_rmin, integral_samples=integral_samples
+            )
+            err = np.abs(cumul - target) / target
             # all of this should happen only with those that have err > rtol
             minerr = np.min(err, axis=0)
             minmask = err == minerr
@@ -284,19 +286,23 @@ class Profile(BaseLensing):
         return Rdelta
 
     @inMpc
-    def enclosed(self, r: np.ndarray, log_rmin=-10, integral_samples=1000):
+    def cumulative(
+        self, r: np.ndarray, *, log_rmin: float = -10, integral_samples: int = 1000
+    ) -> np.ndarray:
         """Mean value of the profile within a radius r,
 
         .. math::
 
             \\bar\\rho(R) = \\frac3{R^3} \\int_0^R r^2 \\rho(r)\\,dr
         """
-        return self.mass_enclosed(
+        return self.mass_cumulative(
             r, log_rmin=log_rmin, integral_samples=integral_samples
         ) / (4 / 3 * np.pi * r**3)
 
     @inMpc
-    def mass_enclosed(self, r: np.ndarray, log_rmin=-10, integral_samples=1000):
+    def mass_cumulative(
+        self, r: np.ndarray, *, log_rmin: float = -10, integral_samples: int = 1000
+    ) -> np.ndarray:
         """Spherical integral within a radius r,
 
         .. math::
@@ -361,8 +367,12 @@ class Profile(BaseLensing):
             f" {integral_samples} ({type(integral_samples)})"
         )
         R_los = np.logspace(log_rmin, log_rmax, integral_samples)
-        R = (R_los**2 + R[..., None] ** 2) ** 0.5
-        return 2 * simps(self.profile(R), R_los, axis=len(R.shape) - 1)
+        # R = (R_los**2 + R[..., None] ** 2) ** 0.5
+        # return 2 * simps(self.profile(R), R_los, axis=len(R.shape) - 1)
+        # we must add dimensions to R_los rather than R so that @array
+        # works as expected. It can be quite slow though
+        R = (np.expand_dims(R_los, tuple(range(1, R.ndim + 1))) ** 2 + R**2) ** 0.5
+        return 2 * simps(self.profile(R), R_los, axis=0)
 
     @inMpc
     def projected_cumulative(

@@ -12,9 +12,9 @@ profiles `here <../index.html>`_.
 +=======================================+=====================================================================+
 | ``profile(R)``                        | three-dimensional profile                                           |
 +---------------------------------------+---------------------------------------------------------------------+
-| ``enclosed(R)``                       | mean value within ``R``                                             |
+| ``profile_cumulative(R)``                       | mean value within ``R``                                             |
 +---------------------------------------+---------------------------------------------------------------------+
-| ``mass_enclosed(R)``                  | spherical integral within ``R``                                     |
+| ``mass_cumulative(R)``                  | spherical integral within ``R``                                     |
 +---------------------------------------+---------------------------------------------------------------------+
 | ``projected(R, **kwargs)``            | Line-of-sight projected profile                                     |
 +---------------------------------------+---------------------------------------------------------------------+
@@ -36,8 +36,8 @@ Numerical profile projections
 If the projections of a given profile do not have analytical forms, they are
 calculated by numerical integration, using ``scipy.integrate.simps``.
 
-Mass enclosed
--------------
+Cumulative mass
+---------------
 
 Spherical integral within a radius ``R``. For a density profile this corresponds
 to the enclosed mass:
@@ -47,8 +47,8 @@ to the enclosed mass:
     M(<R) = \int_{V(<R)}d^3r\,\rho(r) = 4\pi\int_0^R dr\,r^2\rho(r)
 
 
-Enclosed distribution
----------------------
+Cumulative profile
+------------------
 
 Mean value of the profile within the specified radius:
 
@@ -177,7 +177,7 @@ the time being. The current methods will be replaced by this implementation in t
 A note on the radial coordinate
 +++++++++++++++++++++++++++++++
 
-All examples in these docs employ one-dimensional radial arrays, ``R``, to calculate profiles. In fact, ``profiley`` can manage ``R`` of any shape. The resulting profiles will depend on the shape of ``R``. Perhaps the rule is best illustrated with a few examples. Here we assume that ``p`` is a ``profiley`` object with ``shape=(12, 7, 5)``. For instance,
+All examples in these docs employ one-dimensional radial arrays, ``R``, to calculate profiles. In fact, ``profiley`` can manage ``R`` of any shape. The resulting profiles will depend on the shape of ``R``: dimensions will be added to ``R`` to the extent that they are needed to be able to multiply ``R`` with an array of shape ``p.shape``. Below are a few examples, assuming ``p`` is a ``Profile`` object with ``shape=(12, 7, 5)``. For instance,
 
 .. code-block:: python
 
@@ -188,17 +188,25 @@ All examples in these docs employ one-dimensional radial arrays, ``R``, to calcu
 
 The shape of the result of any of ``p``'s `profile methods <profiles/Profile/index.html>`_ will be as follows:
 
-+--------------+---------------------+
-| ``R.shape``  | profile shape       |
-+==============+=====================+
-| ``(25,)``    | ``(25,12,7,5)``     |
-+--------------+---------------------+
-| ``(25,100)`` | ``(25,100,12,7,5)`` |
-+--------------+---------------------+
-| ``(25,12)``  | ``(25,12,7,5)``     |
-+--------------+---------------------+
++-----------------+----------------------+
+| ``R.shape``     | profile shape        |
++=================+======================+
+| ``(25,)``       | ``(25,12,7,5)``      |
++-----------------+----------------------+
+| ``(25,100)``    | ``(25,100,12,7,5)``  |
++-----------------+----------------------+
+| ``(25,12)``     | ``(25,12,7,5)``      |
++-----------------+----------------------+
+| ``(25,12,7)``   | ``(25,12,7,5)``      |
++-----------------+----------------------+
+| ``(25,12,7,5)`` | ``(25,12,7,5)``      |
++-----------------+----------------------+
+| ``(25,1,7)``    | ``(25,12,7,5)``      |
++-----------------+----------------------+
+| ``(25,12,5)``   | ``(25,12,5,12,7,5)`` |
++-----------------+----------------------+
 
-Etc. In words, dimensions will be added to ``R`` to the extent that they are needed to be able to multiply ``R`` with an array of shape ``p.shape``. Exceptional situations, e.g., when the number of radial elements (or the last dimension) is equal to the first element of ``p.shape`` but it is not meant to represent one radial vector per profile, will not behave as expected. Such fringe cases must be appropriately handled by the user, but should generally be avoided.
+Etc. That is, if the last N dimensions of ``R`` match the first N dimensions of ``p`` (considering empty dimensions appropriately), they will be assumed to correspond to each set of profiles. Exceptional situations, e.g., when the number of radial elements (or the last dimension) is equal to the first element of ``p.shape`` but it is not meant to represent one radial vector per profile, will not behave as expected. Such fringe cases must be appropriately handled by the user, but should generally be avoided.
 
 
 .. inheritance:

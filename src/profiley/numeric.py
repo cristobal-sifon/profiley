@@ -1,3 +1,4 @@
+"""Stand-alone numerical implementations"""
 import numpy as np
 from scipy.integrate import trapz
 from scipy.interpolate import UnivariateSpline
@@ -53,40 +54,44 @@ def offset(profile, R, Roff, theta_samples=360, weights=None):
             shape: ([M,...,]N)
 
     """
-    if not isinstance(theta_samples, (int,np.integer)):
+    if not isinstance(theta_samples, (int, np.integer)):
         raise TypeError(
-            'argument theta_samples must be int, received' \
-            f' {theta_samples} ({type(theta_samples)})')
+            "argument theta_samples must be int, received"
+            f" {theta_samples} ({type(theta_samples)})"
+        )
     if not np.iterable(Roff):
         Roff = np.array([Roff])
-    assert Roff.ndim == 1, 'argument Roff must be 1d'
+    assert Roff.ndim == 1, "argument Roff must be 1d"
     if weights is not None:
         if weights.size != Roff.size:
-            msg = 'weights must have the same size as Roff,' \
-                  f' received {weights.size}, {Roff.size},' \
-                  ' respectively.'
+            msg = (
+                "weights must have the same size as Roff,"
+                f" received {weights.size}, {Roff.size},"
+                " respectively."
+            )
             raise ValueError(msg)
 
-    theta = np.linspace(0, 2*np.pi, theta_samples)
-    Roff = Roff[:,None]
-    x = (Roff**2 + R**2 + 2*R*Roff*np.cos(theta[:,None,None]))**0.5
+    theta = np.linspace(0, 2 * np.pi, theta_samples)
+    Roff = Roff[:, None]
+    x = (Roff**2 + R**2 + 2 * R * Roff * np.cos(theta[:, None, None])) ** 0.5
     if profile.ndim == 1:
         func = UnivariateSpline(R, profile, k=1, s=0)
         off = trapz(func(x), theta, axis=0)
     else:
         shape = profile.shape
         ndim = profile.ndim
-        profile = profile.reshape((*shape[:-1],1,1,shape[-1]))
+        profile = profile.reshape((*shape[:-1], 1, 1, shape[-1]))
         if ndim == 2:
             # we have to iterate over additional dimensions
             funcs = (UnivariateSpline(R, pi, k=1, s=0) for pi in profile)
             off = np.array([trapz(f(x), theta, axis=0) for f in funcs])
         if ndim == 3:
-            funcs = ((UnivariateSpline(R, pij, k=1, s=0)
-                      for pij in pi) for pi in profile)
-            off = np.array([[trapz(fij(x), theta, axis=0)
-                             for fij in fi] for fi in funcs])
+            funcs = (
+                (UnivariateSpline(R, pij, k=1, s=0) for pij in pi) for pi in profile
+            )
+            off = np.array(
+                [[trapz(fij(x), theta, axis=0) for fij in fi] for fi in funcs]
+            )
     if weights is not None:
-        off = trapz(weights[:,None]*off, Roff, axis=-2) \
-            / trapz(weights, Roff[:,0])
-    return off / (2*np.pi)
+        off = trapz(weights[:, None] * off, Roff, axis=-2) / trapz(weights, Roff[:, 0])
+    return off / (2 * np.pi)
