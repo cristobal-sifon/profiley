@@ -6,7 +6,7 @@ from astropy.cosmology import FlatLambdaCDM, cosmology_equal
 import numpy as np
 
 from profiley.einasto import Einasto
-from profiley.nfw import NFW
+from profiley.nfw import GNFW, NFW, WebskyNFW
 
 
 def test_cosmo():
@@ -24,10 +24,14 @@ def test_density_physical():
     """Equations 3, 4, and 5 from the CCL paper"""
     cosmo = FlatLambdaCDM(Om0=0.30, Ob0=0.049, H0=71, Tcmb0=2.725 * u.K)
     od = 200
-    p = NFW(7e14, 3, 0.3, overdensity=od, background="c", frame="physical", cosmo=cosmo)
+    p = WebskyNFW(
+        7e14, 3, 0.3, overdensity=od, background="c", frame="physical", cosmo=cosmo
+    )
     rho_bg = cosmo.critical_density0 * (cosmo.H(p.z) / cosmo.H0) ** 2
     assert np.allclose(p.rho_bg, rho_bg.to(u.Msun / u.Mpc**3).value)
-    p = NFW(2e15, 2, 0.8, overdensity=od, background="m", frame="physical", cosmo=cosmo)
+    p = GNFW(
+        2e15, 2, 0.8, overdensity=od, background="m", frame="physical", cosmo=cosmo
+    )
     rho_bg = (
         cosmo.critical_density0
         * (cosmo.H(p.z) / cosmo.H0) ** 2
@@ -40,7 +44,9 @@ def test_density_physical():
 def test_density_comoving():
     cosmo = FlatLambdaCDM(Om0=0.27, Ob0=0.049, H0=75, Tcmb0=2.725 * u.K)
     od = 200
-    p = NFW(3e14, 8, 0.4, overdensity=od, background="c", frame="comoving", cosmo=cosmo)
+    p = WebskyNFW(
+        3e14, 8, 0.4, overdensity=od, background="c", frame="comoving", cosmo=cosmo
+    )
     rho_bg = cosmo.critical_density0 * (cosmo.H(p.z) / cosmo.H0) ** 2 / (1 + p.z) ** 3
     assert np.allclose(p.rho_bg, rho_bg.to(u.Msun / u.Mpc**3).value)
     p = NFW(3e14, 8, 0.4, overdensity=od, background="m", frame="comoving", cosmo=cosmo)
