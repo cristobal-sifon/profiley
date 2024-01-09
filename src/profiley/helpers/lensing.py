@@ -123,7 +123,18 @@ class BaseLensing(BaseCosmo):
 
 
 class Lens(BaseCosmo):
-    """Lens object class"""
+    """Lens object class
+
+    Parameters
+    ----------
+    z : float or np.ndarray
+        redshift
+
+    Optional parameters
+    -------------------
+    cosmo : astropy.cosmology.FLRW object
+        cosmology
+    """
 
     # should move some of what's in BaseLensing into here
     # then calling BaseLensing (perhaps just Lensing) should
@@ -137,12 +148,14 @@ class Lens(BaseCosmo):
 
     @property
     def chi(self):
+        """Comoving distance to ``self``"""
         if self._chi is None:
             self._chi = self.cosmo.comoving_distance(self.z)
         return self._chi
 
     @property
     def Dl(self):
+        """Angular diameter distance from the observer to ``self``"""
         if self._Ds is None:
             self._Ds = self.cosmo.angular_diameter_distance(self.z)
         return self._Ds
@@ -151,10 +164,12 @@ class Lens(BaseCosmo):
 
     # @float_args
     def Dls(self, z_s):
+        """Angular diameter distance from ``self`` to a source at redshift ``z_s``"""
         return self.cosmo.angular_diameter_distance_z1z2(self.z, z_s)
 
     # @float_args
     def sigma_crit(self, z_s, frame="comoving"):
+        """Critical surface density for a source at redshift ``z_s``"""
         assert frame in ("comoving", "physical", "proper")
         A = self._c**2 / (4 * np.pi * self._G)
         if frame == "comoving":
@@ -163,6 +178,7 @@ class Lens(BaseCosmo):
 
     # @float_args
     def lensing_kernel(self, z_s):
+        """Lensing kernel for a source at redshift ``z_s``"""
         chi_z_s = self.cosmo.comoving_distance(z_s)
         return (
             (
@@ -184,7 +200,18 @@ class Lens(BaseCosmo):
 
 class Source(BaseCosmo):
 
-    """Lensed source class"""
+    """Lensed source class
+
+    Parameters
+    ----------
+    z_s : float or np.ndarray
+        source redshift
+
+    Optional parameters
+    -------------------
+    cosmo : astropy.cosmology.FLRW object
+        cosmology
+    """
 
     def __init__(self, z_s, cosmo=Planck15):
         super(Source, self).__init__(cosmo=cosmo)
@@ -195,30 +222,37 @@ class Source(BaseCosmo):
 
     @property
     def chi(self):
+        """Comoving distance to ``self``"""
         if self._chi is None:
             self._chi = self.cosmo.comoving_distance(self.z_s)
         return self._chi
 
     @property
     def Ds(self):
+        """Angular diameter distance from the observer to ``self``"""
         if self._Ds is None:
             self._Ds = self.cosmo.angular_diameter_distance(self.z_s)
         return self._Ds
 
     ### methods ###
 
-    def Dls(self, z):
-        return self.cosmo.angular_diameter_distance_z1z2(z, self.z_s)
+    def Dls(self, z_lens):
+        """Angular diameter distance from a lens at redshift ``z_lens`` to ``self``"""
+        return self.cosmo.angular_diameter_distance_z1z2(z_lens, self.z_s)
 
-    def sigma_crit(self, z, frame="comoving"):
+    def sigma_crit(self, z_lens, frame="comoving"):
+        """Critical surface density for a lens at redshift ``z_lens``"""
         assert frame in ("comoving", "physical", "proper")
         A = self._c**2 / (4 * np.pi * self._G)
         if frame == "comoving":
-            A = A / (1 + z) ** 2
-        return A / (self.angular_diameter_distance(z) * self.Dls_over_Ds(z_s=self.z_s))
+            A = A / (1 + z_lens) ** 2
+        return A / (
+            self.angular_diameter_distance(z_lens) * self.Dls_over_Ds(z_s=self.z_s)
+        )
 
-    def lensing_kernel(self, z):
-        chi_z = self.cosmo.comoving_distance(z)
+    def lensing_kernel(self, z_lens):
+        """Lensing kernel for a lens at redshift ``z_lens``"""
+        chi_z = self.cosmo.comoving_distance(z_lens)
         return (
             (
                 3
