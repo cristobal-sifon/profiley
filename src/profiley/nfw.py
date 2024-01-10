@@ -2,14 +2,11 @@ import astropy
 from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
-from scipy.integrate import simps
 from scipy.special import sici
-import warnings
 
 from .core import Profile
 from .helpers.decorators import array, inMpc
-from .helpers.lensing import BaseLensing
-from .helpers.spherical import mass_from_radius, radius_from_mass
+from .helpers.spherical import radius_from_mass
 
 
 class BaseNFW(Profile):
