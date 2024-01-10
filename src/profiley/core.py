@@ -286,6 +286,7 @@ class Profile(BaseLensing):
         return Rdelta
 
     @inMpc
+    @array
     def cumulative(
         self, r: np.ndarray, *, log_rmin: float = -10, integral_samples: int = 1000
     ) -> np.ndarray:
@@ -300,6 +301,7 @@ class Profile(BaseLensing):
         ) / (4 / 3 * np.pi * r**3)
 
     @inMpc
+    @array
     def mass_cumulative(
         self, r: np.ndarray, *, log_rmin: float = -10, integral_samples: int = 1000
     ) -> np.ndarray:
