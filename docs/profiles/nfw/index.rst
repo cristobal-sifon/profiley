@@ -23,7 +23,7 @@ The signature is
     from profiley.nfw import NFW
     NFW(mass, concentration, z, **kwargs)
 
-where ``kwargs`` are passed to ``BaseLensing`` and ``BaseCosmo``. See
+where ``kwargs`` are passed to ``Lens`` and ``BaseCosmo``. See
 `Inheritance <../profile.html#inheritance>`_.
 
 

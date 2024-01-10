@@ -253,40 +253,30 @@ of distances detailed below.
 
 .. _lensing:
 
-``BaseLensing``: Gravitational lensing functionality
-----------------------------------------------------
+``Lens``: Gravitational lensing functionality
+---------------------------------------------
 
-The ``Profile`` class inherits from the ``BaseLensing`` helper class,
+The ``Profile`` class inherits from the ``Lens`` helper class,
 which implements quantities relevant for gravitational lensing analysis.
 
-+----------------------------------------------+
-| Optional arguments inherited from this class |
-+=========+===========+========================+
-| ``z_s`` | ``float`` | source redshift        |
-+---------+-----------+------------------------+
++--------------------------------------------------------------------------------------+
+| Attributes inherited from this class                                                 |
++=========+===========+================================================================+
+| ``Dl``  | ``float`` | angular diameter distance from observer to lens object, in Mpc |
++---------+-----------+----------------------------------------------------------------+
 
-+--------------------------------------------------------------------------------+
-| Attributes inherited from this class                                           |
-+=========+===========+==========================================================+
-| ``Dl``  | ``float`` | angular diameter distance from observer to lens object   |
-+---------+-----------+----------------------------------------------------------+
-| ``Dls`` | ``float`` | angular diameter distance between lens and lensed source |
-+---------+-----------+----------------------------------------------------------+
-| ``Ds``  | ``float`` | angular diameter distance from observer to lensed source |
-+---------+-----------+----------------------------------------------------------+
++-----------------------------------------------------------------------------------------------+
+| Methods inherited from this class                                                             |
++=======================================+=======================================================+
+| ``Dls(z_s)``                          | angular diameter distance from lens to source, in Mpc |
++---------------------------------------+-------------------------------------------------------+
+| ``Dls_over_Ds(z_s)``                  | :math:`\max(0, D_\mathrm{ls}/D_\mathrm{s})`           |
++---------------------------------------+-------------------------------------------------------+
+| ``convergence(R, z_s)``               | lensing convergence                                   |
++---------------------------------------+-------------------------------------------------------+
+| ``offset_convergence(R, R_off, z_s)`` | offset lensing convergence                            |
++---------------------------------------+-------------------------------------------------------+
+| ``sigma_crit(z_s)``                   | critical surface density                              |
++---------------------------------------+-------------------------------------------------------+
 
-+---------------------------------------------------------------------------------------+
-| Methods inherited from this class                                                     |
-+=========================================+=============================================+
-| ``beta([z_s])``                         | :math:`\max(0, D_\mathrm{ls}/D_\mathrm{s})` |
-+-----------------------------------------+---------------------------------------------+
-| ``convergence(R[, z_s])``               | lensing convergence                         |
-+-----------------------------------------+---------------------------------------------+
-| ``offset_convergence(R, R_off[, z_s])`` | offset lensing convergence                  |
-+-----------------------------------------+---------------------------------------------+
-| ``sigma_crit([z_s])``                   | critical surface density                    |
-+-----------------------------------------+---------------------------------------------+
-
-In all the methods above, the source redshift, ``z_s``, may be specified as a
-keyword argument, in which case it will override the ``self.z_s`` attribute *for
-that particular call of the method only*.
+In all these methods, ``z_s`` is the source redshift.

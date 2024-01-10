@@ -14,13 +14,13 @@ except ImportError:
 
 from .helpers.cosmology import BaseCosmo
 from .helpers.decorators import array, deprecated, inMpc
-from .helpers.lensing import BaseLensing
+from .helpers.lensing import Lens
 
 
 warnings.simplefilter("once", category=DeprecationWarning)
 
 
-class Profile(BaseLensing):
+class Profile(Lens):
     """Profile object
 
     All profiles should inherit from ``Profile``
