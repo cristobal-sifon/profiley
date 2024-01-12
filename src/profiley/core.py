@@ -25,15 +25,15 @@ class Profile(Lens):
 
     All profiles should inherit from ``Profile``
 
-    Defining your own profile is very simple. As an example, let's
-    define a simple power-law profile with two free parameters, the
-    normalization and the slope:
+    Defining your own profile is very simple. As an example, let's define a simple power-law profile with two free parameters, the normalization and the slope:
 
-    .. math::
+    .. math ::
 
-        f(r, a, b) = a * r^b
+        f(r | a, b) = a \\, r^b
 
-    ::
+    The definition would look like this:
+
+    .. code-block ::
 
         class PowerLaw(Profile):
 
@@ -47,20 +47,12 @@ class Profile(Lens):
             def profile(self, r):
                 return self.norm * r**self.slope
 
-    That's it! The ``__init__()`` method needs only two lines of code
-    (in addition to attribute definitions). The last line is necessary
-    to allow ``profiley`` to automatically handle arbitrary shapes,
-    through the definition of a ``shape`` attribute. Note that
-    ``_set_shape`` takes only one argument (besides ``self``) - the
-    *product* of the class arguments. That is, if the arguments are
-    arrays, their dimensions must be such that a product can be carried
-    out without any manipulation.
+    That's it! The ``__init__()`` method needs only two lines of code (in addition to attribute definitions). The last line is necessary to allow ``profiley`` to automatically handle arbitrary shapes, through the definition of a ``shape`` attribute. Note that ``_set_shape`` takes only one argument (besides ``self``) - the *product* of the class arguments. That is, if the arguments are arrays, their dimensions must be such that a product can be carried out without any manipulation.
 
     Profile projections
     -------------------
 
-    If the projection of this profile is analytical, any or all of the
-    following methods can also be specified: ::
+    If the projection of this profile is analytical, any or all of the following methods can also be specified: ::
 
         projected(self, R)
         projected_cumulative(self, R)
@@ -70,16 +62,12 @@ class Profile(Lens):
         offset_projected_cumulative(self, R, Roff)
         offset_projected_excess(self, R, Roff)
 
-    If it does not have analytical expressions, these methods will also
-    exist, but they will be calculated numerically, so they may be
-    somewhat slower depending on the precision required.
+    If it does not have analytical expressions, these methods will also exist, but they will be calculated numerically, so they may be somewhat slower depending on the precision required.
 
     Cosmology
     ---------
 
-    All ``Profile`` objects contain all cosmological information with
-    which they have been initialized through the ``self.cosmo`` attribute,
-    which can be any ``astropy.cosmology.FLRW`` object.
+    All ``Profile`` objects contain all cosmological information with which they have been initialized through the ``self.cosmo`` attribute, which can be any ``astropy.cosmology.FLRW`` object.
 
     """
 
@@ -101,9 +89,8 @@ class Profile(Lens):
         z : float or ndarray of floats
             redshift
         overdensity : int or float
-            overdensity with respect to the background (does not apply
-            to all Profile children; see each specific class for
-            details)
+            overdensity with respect to the background (does not apply to all Profile children; see each specific class for details)
+
         """
         super().__init__(z, **kwargs)
         # check overdensity
@@ -235,6 +222,7 @@ class Profile(Lens):
             fractional error in the density at the returned radii. Only returned if ``return_errors==True``
 
         Each returned array has a shape equal to ``self.shape``.
+
         """
         if overdensity == self.overdensity and background == self.background:
             if return_errors:
@@ -295,6 +283,19 @@ class Profile(Lens):
         .. math::
 
             \\bar\\rho(R) = \\frac3{R^3} \\int_0^R r^2 \\rho(r)\\,dr
+
+        Parameters
+        ----------
+        r : np.ndarray
+            positions at which to calculate the cumulative profile
+
+        Optional arguments
+        ------------------
+        log_rmin : float
+            log10 lower limit to integrate the profile
+        integral_samples : int
+            number of samples to generate for Simpson-rule integration
+
         """
         return self.mass_cumulative(
             r, log_rmin=log_rmin, integral_samples=integral_samples
@@ -313,7 +314,7 @@ class Profile(Lens):
 
         Parameters
         ----------
-        R : np.ndarray
+        r : np.ndarray
             positions at which to calculate the cumulative profile
 
         Optional arguments
@@ -322,6 +323,7 @@ class Profile(Lens):
             log10 lower limit to integrate the profile
         integral_samples : int
             number of samples to generate for Simpson-rule integration
+
         """
         R_int = np.logspace(log_rmin, np.log10(r), integral_samples)
         return 4 * np.pi * simps(R_int**2 * self.profile(R_int), R_int, axis=0)
@@ -347,18 +349,13 @@ class Profile(Lens):
         log_rmin, log_rmax : float
             lower and upper limits for logspace resampling for integration
         integral_samples : int
-            number of samples to generate for Simpson-rule integration
-            of the projected profile
+            number of samples to generate for Simpson-rule integration of the projected profile
 
 
-        Notes on numerical integration
-        ------------------------------
-         -The default values for the integration parameters give
-            numerical errors well below 0.1% over the range
-            R=[1e-5,100] Mpc, when comparing the numerical and
-            analytical implementations for an NFW profile (the
-            former can be obtained by defining a GNFW profile with
-            default kwargs)
+        .. note ::
+
+            The default values for the integration parameters give numerical errors well below 0.1% over the range R=[1e-5,100] Mpc, when comparing the numerical and analytical implementations for an NFW profile (the former can be obtained by defining a GNFW profile with default kwargs)
+
         """
         assert log_rmin < log_rmax, (
             "argument log_rmin must be larger than log_rmax, received"
@@ -386,8 +383,7 @@ class Profile(Lens):
         resampling: int = 20,
         **kwargs,
     ) -> np.ndarray:
-        """Cumulative projected profile within R, calculated
-        numerically
+        """Cumulative projected profile within R, calculated numerically
 
         Parameters
         ----------
@@ -397,30 +393,23 @@ class Profile(Lens):
         Optional arguments
         ------------------
         log_rmin : float
-            lower limit for logspace resampling for integration. The
-            same value will be passed to ``self.projected``
+            lower limit for logspace resampling for integration. The same value will be passed to ``self.projected``
         resampling : int
-            number of samples into which each R-interval in the
-            data will be re-sampled. For instance, if two adjacent
-            data points are at Rbin=0.1,0.2 then for the integration
-            they will be replaced by
-                newRbin = np.logspace(np.log10(0.1), np.log10(0.2),
-                                      resampling, endpoint=False)
+            number of samples into which each R-interval in the data will be re-sampled. For instance, if two adjacent data points are at ``Rbin=0.1,0.2`` then for the integration they will be replaced by ::
+
+                newRbin = np.logspace(
+                    np.log10(0.1), np.log10(0.2), resampling, endpoint=False)
+
             (the endpoint will be added when sampling the following bin)
         left_samples : int
-            number of samples to use between log_rmin and the first
-            value of R, with a logarithmic sampling
+            number of samples to use between log_rmin and the first value of R, with a logarithmic sampling
 
         Additional arguments will be passed to ``self.projected``
 
-        Notes on numerical integration
-        ------------------------------
-         -The default values for the integration parameters give
-            numerical errors well below 0.1% over the range
-            R=[1e-5,100] Mpc, when comparing the numerical and
-            analytical implementations for an NFW profile (the
-            former can be obtained by defining a GNFW profile with
-            default kwargs)
+        .. note ::
+
+            The default values for the integration parameters give numerical errors well below 0.1% over the range :math:`R=[10^{-5},100]\\,\\mathrm{Mpc}`, when comparing the numerical and analytical implementations for an NFW profile (the former can be obtained by defining a GNFW profile with default kwargs)
+
         """
         assert isinstance(left_samples, (int, np.integer)), (
             "argument left_samples must be int, received"
@@ -466,29 +455,25 @@ class Profile(Lens):
         left_samples: int = 100,
         resampling: int = 20,
     ) -> np.ndarray:
-        """Cumulative projected profile file excess at projected
-        distance(s) R, defined as
+        """Cumulative projected profile file excess at projected distance(s) R, defined as ::
 
             projected_excess(R) = projected_cumulative(R) - projected(R)
 
-        This profile is most commonly used as the galaxy weak lensing
-        *shear* observable, :math:`\gamma` where the projected excess
-        is referred to as the *excess surface density* (ESD or
-        :math:`\Delta\Sigma`),
+        This profile is most commonly used as the galaxy weak lensing *shear* observable, :math:`\\gamma` where the projected excess is referred to as the *excess surface density* (ESD or :math:`\\Delta\\Sigma`),
 
         .. math::
 
-            \Delta\Sigma(R) = \gamma\Sigma_\mathrm{c}
+            \\Delta\\Sigma(R) = \\gamma\\Sigma_\\mathrm{c}
 
-        where :math:`\Sigma_\mathrm{c}` is the critical surface density
+        where :math:`\\Sigma_\\mathrm{c}` is the critical surface density
 
         Parameters
         ----------
         R : float or array of float
             projected distance(s)
 
-        Optional arguments are passed to either ``self.projected`` or
-        ``self.projected_cumulative``
+        Optional arguments are passed to either ``self.projected`` or ``self.projected_cumulative``
+
         """
         s1 = self.projected_cumulative(
             R,
@@ -512,12 +497,11 @@ class Profile(Lens):
         weights: np.ndarray = None,
         **kwargs,
     ) -> np.ndarray:
-        """Calcuate any profile with a reference point different
-        from its center
+        """Calcuate any profile with a reference point different from its center
 
-        NOTE: We recommend using the significantly faster
-        ``profiley.numeric.offset`` instead of this method, and will
-        merge that implementation into this function in the future.
+        .. note ::
+
+            We recommend using the significantly faster ``profiley.numeric.offset`` instead of this method, and will merge that implementation into this function in the future.
 
         Parameters
         ----------
@@ -533,24 +517,22 @@ class Profile(Lens):
         theta_samples : int
             number of samples for the angular integral from 0 to 2*pi
         weights : array of floats, shape (M,)
-            weights to apply to each profile corresponding to every
-            value of ``Roff``. See ``Returns`` below
+            weights to apply to each profile corresponding to every value of ``Roff``. See ``Returns`` below
         kwargs : dict
             arguments to pass to ``func``
 
         Returns
         -------
         offset : np.ndarray,
-            offset profile. The shape of the array depends on whether
-            the ``weights`` argument is specified: if *not* specified
-            (default), then
-            .. code-block::
+            offset profile. The shape of the array depends on whether the ``weights`` argument is specified: if *not* specified (default), then
+
+            .. code-block ::
 
                 shape: (M,N,*self.shape)
 
-            if ``weights`` is provided, then the first axis will be
-            weight-averaged over so that
-            .. code-block::
+            if ``weights`` is provided, then the first axis will be weight-averaged over so that
+
+            .. code-block ::
 
                 shape: (N,*self.shape)
 
@@ -598,11 +580,9 @@ class Profile(Lens):
         return self.offset(self.projected, R, Roff, **kwargs)
 
     def offset_projected_cumulative(self, R, Roff, **kwargs):
-        """Alias for ``offset(projected_cumulative, R, Roff,
-        **kwargs)``"""
+        """Alias for ``offset(projected_cumulative, R, Roff, **kwargs)``"""
         return self.offset(self.projected_cumulative, R, Roff, **kwargs)
 
     def offset_projected_excess(self, R, Roff, **kwargs):
-        """Alias for ``offset(projected_excess, R, Roff,
-        **kwargs)``"""
+        """Alias for ``offset(projected_excess, R, Roff, **kwargs)``"""
         return self.offset(self.projected_excess, R, Roff, **kwargs)
