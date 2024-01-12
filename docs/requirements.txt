@@ -1,3 +1,4 @@
-nbsphinx==0.8.8
-sphinx==4.4.0
-sphinx_rtd_theme==1.0.0
+astropy>=4.0
+numpy>=1.16.0,<2.0
+scipy>=1.0,<2.0
+sphinx-rtd-theme==1.3
