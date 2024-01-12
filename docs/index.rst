@@ -84,7 +84,7 @@ License
 
 .. toctree::
     :maxdepth: 2
-    :caption: Contents:
+    :caption: Contents
 
     profiles/Profile/index
     profiles/index
@@ -92,16 +92,13 @@ License
     lss
     filtering
     LICENSE
-    autoapi/profiley
 
-
-API Documentation
-+++++++++++++++++
 
 .. toctree::
-   :maxdepth: 5
+    :maxdepth: 4
+    :caption: API Documentation
 
-   autoapi/profiley/index
+    autoapi/profiley/index
 
 
 .. _License: LICENSE.html

@@ -1,12 +1,11 @@
-'''
+"""
 General quadrature method for Hankel transformations.
 Based on the algorithm provided in
 H. Ogata, A Numerical Integration Formula Based on the Bessel Functions,
 Publications of the Research Institute for Mathematical Sciences,
 vol. 41, no. 4, pp. 949-970, 2005.
-'''
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+"""
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 # TODO: Suppress warnings on overflows
 # TODO: Write tests
@@ -21,8 +20,8 @@ class HankelTransform(object):
     """
     The basis of the Hankel Transformation algorithm by Ogata 2005.
 
-    This algorithm is used to solve the equation :math:`\int_0^\infty f(x) J_\nu(x) dx`
-    where :math:`J_\nu(x)` is a Bessel function of the first kind of order
+    This algorithm is used to solve the equation :math:`\\int_0^\\infty f(x) J_\\nu(x) dx`
+    where :math:`J_\\nu(x)` is a Bessel function of the first kind of order
     :math:`nu`, and :math:`f(x)` is an arbitrary (slowly-decaying) function.
 
     The algorithm is presented in
@@ -41,6 +40,7 @@ class HankelTransform(object):
     h : float, optional, default = 0.1
         The step-size of the integration.
     """
+
     def __init__(self, nu=0, N=200, h=0.05):
         self._nu = nu
         self._h = h
@@ -51,13 +51,15 @@ class HankelTransform(object):
         self.dpsi = self._d_psi(h * self._zeros)
 
     def _psi(self, t):
-        #print t
+        # print t
         y = np.sinh(t)
-        #print y
+        # print y
         return t * np.tanh(np.pi * y / 2)
 
     def _d_psi(self, t):
-        a = (np.pi * t * np.cosh(t) + np.sinh(np.pi * np.sinh(t))) / (1.0 + np.cosh(np.pi * np.sinh(t)))
+        a = (np.pi * t * np.cosh(t) + np.sinh(np.pi * np.sinh(t))) / (
+            1.0 + np.cosh(np.pi * np.sinh(t))
+        )
         a[np.isnan(a)] = 1.0
         return a
 
@@ -68,7 +70,9 @@ class HankelTransform(object):
         if isinstance(self._nu, int):
             return jn_zeros(self._nu, N) / np.pi
         else:
-            return np.array([mpm.besseljzero(self._nu, i + 1) for i in range(N)]) / np.pi
+            return (
+                np.array([mpm.besseljzero(self._nu, i + 1) for i in range(N)]) / np.pi
+            )
 
     def _j(self, x):
         if self._nu == 0:
@@ -111,8 +115,8 @@ class HankelTransform(object):
         ret_cumsum : boolean, optional, default = False
             Whether to return the cumulative sum
         """
-        #fres = self._f(f, self.x)
-        #summation = np.pi * self.w * fres * self.j * self.dpsi
+        # fres = self._f(f, self.x)
+        # summation = np.pi * self.w * fres * self.j * self.dpsi
         summation = np.pi * self.w * self.j * self.dpsi * self._f(f, self.x)
         if ret_err:
             return [summation.sum(), summation[-1]]
@@ -125,10 +129,11 @@ class SphericalHankelTransform(HankelTransform):
     """
     Perform spherical hankel transforms.
 
-    Defined as :math:`\int_0^\infty f(x) j_\nu(x) dx
+    Defined as :math:`\\int_0^\\infty f(x) j_\\nu(x) dx`
 
-    .. Note :: Only does 0th-order transforms currently.
+    Note: Only does 0th-order transforms currently.
     """
+
     def __init__(self, nu=0, *args, **kwargs):
         nu += 0.5
         super(SphericalHankelTransform, self).__init__(nu, *args, **kwargs)
@@ -138,9 +143,6 @@ class SphericalHankelTransform(HankelTransform):
 
     def _roots(self, N):
         if self._nu == 0.5:
-            return (np.arange(N) + 1)
+            return np.arange(N) + 1
         else:
             return super(SphericalHankelTransform, self)._roots(N)
-
-
-

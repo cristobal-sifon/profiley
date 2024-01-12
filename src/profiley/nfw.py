@@ -112,11 +112,14 @@ class GNFW(BaseNFW):
 
     For additional optional parameters see ``NFW``
 
-    Notes
-    -----
-    - A common but more restriced GNFW profile can be recovered by setting
+    .. note ::
+
+        A common but more restriced GNFW profile can be recovered by setting
         alpha=1, beta=3 and varying gamma alone
-    - The default parameters (alpha=1, beta=3, gamma=1) correspond to the
+
+    .. note ::
+
+        The default parameters (alpha=1, beta=3, gamma=1) correspond to the
         regular NFW profile
     """
 
@@ -187,6 +190,7 @@ class NFW(BaseNFW):
         'c' (critical) or 'm' (mean) background density
     cosmo : Astropy.cosmology.FLRW
         cosmology object
+
     """
 
     def __init__(
@@ -346,6 +350,7 @@ class TNFW(BaseNFW):
         to recover regular NFW
 
     For additional optional parameters see ``NFW``
+
     """
 
     def __init__(self, mass, c, z, tau=1, eta=1, **kwargs):
@@ -370,6 +375,8 @@ class TNFW(BaseNFW):
 
 class Hernquist(Profile):
     """Hernquist (1990) profile.
+
+    The density profile is given by
 
     .. math::
 
@@ -399,6 +406,7 @@ class Hernquist(Profile):
         .. math::
 
             M(r) = 2\\pi\\delta_\\mathrm{c}\\rho_\\mathrm{bg}r_\\mathrm{s}^3\\frac{r^2}{(r+r_\\mathrm{s})^2}
+
         """
         return (
             2

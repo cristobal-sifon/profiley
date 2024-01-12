@@ -121,4 +121,4 @@ The signature is
     WebskyNFW(mass, concentration, z, **kwargs)
 
 
-.. include:: ../reference-links.rst
+.. include:: ../../reference-links.rst
