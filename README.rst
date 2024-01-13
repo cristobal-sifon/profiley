@@ -22,6 +22,13 @@ References
 Change Log
 ==========
 
+Version 2.0.0 (ongoing)
+-----------------------
+
+* Renamed all relevant profiles from ``enclosed`` to ``cumulative``
+* Fix critical bugs on critical surface density and background density
+* Added API documentation
+
 Version 1.5.0
 -------------
 * Added ``WebskyNFW`` profile
