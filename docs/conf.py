@@ -43,15 +43,15 @@ extensions = [
     "autoapi.extension",
     "nbsphinx",
     "sphinx_rtd_theme",
-    "sphinx.ext.autodoc",
+    # "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
-    "sphinx.ext.doctest",
-    "sphinx.ext.todo",
-    "sphinx.ext.coverage",
-    "sphinx.ext.mathjax",
-    "sphinx.ext.ifconfig",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.githubpages",
+    # "sphinx.ext.doctest",
+    # "sphinx.ext.todo",
+    # "sphinx.ext.coverage",
+    # "sphinx.ext.mathjax",
+    # "sphinx.ext.ifconfig",
+    # "sphinx.ext.viewcode",
+    # "sphinx.ext.githubpages",
 ]
 
 autoapi_dirs = ["../src/profiley/"]

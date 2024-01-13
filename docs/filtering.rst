@@ -25,5 +25,6 @@ should have been created with pixell:
 
 
 The filtering functionality is contained in the ``filter`` method. For a working 
-example, see `this Jupyter notebook 
-<https://github.com/cristobal-sifon/profiley/blob/master/examples/filtering.ipynb>`_.
+example, see the |ex-filtering|_.
+
+.. include:: github-links.rst

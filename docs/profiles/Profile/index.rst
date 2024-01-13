@@ -90,8 +90,7 @@ This quantity is particularly useful in weak gravitational lensing studies,
 where :math:`\Delta\Sigma(R)` is the excess surface density (ESD), which is
 directly related to the weak lensing shape distortion, called *shear*,
 :math:`\gamma`, through :math:`\gamma=\Delta\Sigma/\Sigma_\mathrm{c}`, where
-:math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing
-functionality <#lensing>`_).
+:math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing`_).
 
 Precision of numerical integration
 ----------------------------------
@@ -99,8 +98,7 @@ Precision of numerical integration
 Several optional arguments allow the user to find their own sweet-spot in the
 trade-off between precision and execution time. Using the default parameters the
 precision of the numerical calculations for an NFW profile is better than 0.1%
-at all radii, as demonstrated in the `Examples
-<https://github.com/cristobal-sifon/profiley/blob/master/examples/nfw/nfw_single.ipynb>`_.
+at all radii, as demonstrated in the |ex-numeric|_.
 
 .. offset:
 
@@ -166,8 +164,7 @@ array, using the ``offset`` function within the ``numeric`` module:
     weights = np.normal(0.2, 0.1, Roff.size)
     sigma_off = offset(sigma, R, Roff, weights=weights)
 
-For more details, see the `Examples
-<https://github.com/cristobal-sifon/profiley/blob/master/examples/nfw/nfw_single.ipynb>`_.
+For more details, see the |ex-offset|_.
 
 In fact, the latter implementation is about an order of magnitude faster
 than the ``Profile`` method described above, and should be preferred for
@@ -280,3 +277,5 @@ which implements quantities relevant for gravitational lensing analysis.
 +---------------------------------------+-------------------------------------------------------+
 
 In all these methods, ``z_s`` is the source redshift.
+
+.. include:: ../../github-links.rst

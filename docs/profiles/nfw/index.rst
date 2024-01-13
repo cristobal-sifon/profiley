@@ -24,7 +24,7 @@ The signature is
     NFW(mass, concentration, z, **kwargs)
 
 where ``kwargs`` are passed to ``Lens`` and ``BaseCosmo``. See
-`Inheritance <../profile.html#inheritance>`_.
+`Inheritance <../Profile/index.html#inheritance>`_.
 
 
 .. _gnfw:
@@ -64,8 +64,7 @@ The ``TNFW`` class implements a truncated NFW profile,
 
 where :math:`\tau=r_\mathrm{t}/r_\mathrm{s}`, with
 :math:`r_\mathrm{s}` the scale radius and :math:`r_\mathrm{t}` the truncation radius.
-Analytical expressions have been derived for the cases :math:`\eta=\{1,2\}` by `Baltz,
-Marshall & Oguri (2009) <http://adsabs.harvard.edu/abs/2009JCAP...01..015B>`_, but
+Analytical expressions have been derived for the cases :math:`\eta=\{1,2\}` by |Baltz2009|_, but
 they have not yet been implemented in ``profiley``, which means the projections of
 TNFW profiles are calculated numerically.
 
@@ -82,8 +81,7 @@ The signature is
 Hernquist profile
 +++++++++++++++++
 
-The ``Hernquist`` class implements the `Hernquist (1990)
-<https://ui.adsabs.harvard.edu/abs/1990ApJ...356..359H/abstract>`_ profile,
+The ``Hernquist`` class implements the |Hernquist1990|_ profile,
 which is a special case of the GNFW profile with :math:`\alpha=1`,
 :math:`\beta=4`, and :math:`\gamma=1`.
 
@@ -100,7 +98,7 @@ The signature is
 Websky Modified NFW
 +++++++++++++++++++
 
-The ``WebskyNFW`` class implements the modified NFW profile adopted for the Websky simulations by :ref:`websky`_,
+The ``WebskyNFW`` class implements the modified NFW profile adopted for the Websky simulations by |Websky|_,
 
 .. math::
 

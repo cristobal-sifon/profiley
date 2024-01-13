@@ -20,7 +20,7 @@ Installation
     pip install profiley
 
 Alternatively, you may download the development version by forking or cloning
-the `github repository <https://github.com/cristobal-sifon/profiley>`_.
+the |githome|_.
 
 
 Basic Usage
@@ -60,7 +60,7 @@ profiles with shape ``(R.size,5,3,11)``.
 Examples
 ++++++++
 
-For more detailed usage, see the `examples on github <https://github.com/cristobal-sifon/profiley/tree/master/examples>`_.
+For more detailed usage, see the |examples|_.
 
 
 Available profiles
@@ -102,3 +102,5 @@ License
 
 
 .. _License: LICENSE.html
+
+.. include:: github-links.rst
