@@ -4,6 +4,10 @@ profiley
 
 Profile calculations for galaxies and clusters
 
+.. image:: https://readthedocs.org/projects/profiley/badge/?version=latest
+    :target: https://profiley.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 To install, simply run ::
 
     pip install profiley
