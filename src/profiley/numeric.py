@@ -4,7 +4,7 @@ from scipy.integrate import trapz
 from scipy.interpolate import UnivariateSpline
 
 
-def offset(profile, R, Roff, theta_samples=360, weights=None):
+def offset(profile, R, Roff, weights=None, *, theta_samples=360):
     """Calcuate any profile with a reference point different
     from its center
 
@@ -23,33 +23,29 @@ def offset(profile, R, Roff, theta_samples=360, weights=None):
         output of ``profiley``. The returned profile, therefore, should
         be transposed back if working with ``profiley``
     R : np.ndarray, shape (N,)
-        radii at which to calculate the offset surface density
+        radii at which ``profile`` has been calculated. The same radii will be used to calculate the offset profile
     Roff : np.ndarray, shape (P,)
         offsets with respect to the profile center
 
     Optional parameters
     -------------------
+        weights to apply to each profile corresponding to every
+        value of ``Roff``. See ``Returns`` below
     theta_samples : int
         number of samples for the angular integral from 0 to 2*pi
     weights : array of floats, shape (P,)
-        weights to apply to each profile corresponding to every
-        value of ``Roff``. See ``Returns`` below
-    kwargs : dict
-        arguments to pass to ``func``
 
     Returns
     -------
     offset : np.ndarray,
         offset profile. The shape of the array depends on whether
         the ``weights`` argument is specified: if *not* specified
-        (default), then
-        .. code-block::
+        (default), then ::
 
             shape: ([M,...,]P,N)
 
         if ``weights`` is provided, then the first axis will be
-        weight-averaged over so that
-        .. code-block::
+        weight-averaged over so that ::
 
             shape: ([M,...,]N)
 
