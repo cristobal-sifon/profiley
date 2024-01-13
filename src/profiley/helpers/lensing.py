@@ -41,9 +41,9 @@ class Lens(BaseCosmo):
     @property
     def Dl(self):
         """Angular diameter distance from the observer to ``self``"""
-        if self._Ds is None:
-            self._Ds = self.cosmo.angular_diameter_distance(self.z)
-        return self._Ds
+        if self._Dl is None:
+            self._Dl = self.cosmo.angular_diameter_distance(self.z)
+        return self._Dl
 
     ### methods ###
 
