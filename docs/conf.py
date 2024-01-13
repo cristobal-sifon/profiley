@@ -29,7 +29,7 @@ with open("../src/profiley/__init__.py") as f:
 
 
 project = f"profiley v{release}"
-copyright = "2020-2023, Cristóbal Sifón"
+copyright = "2020-2024, Cristóbal Sifón"
 author = "Cristóbal Sifón"
 
 
