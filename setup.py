@@ -47,7 +47,7 @@ setup(
     url="https://github.com/cristobal-sifon/profiley",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
-    install_requires=read_requirements("docs/requirements.txt"),
+    install_requires=read_requirements("requirements.txt"),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: MIT License",
