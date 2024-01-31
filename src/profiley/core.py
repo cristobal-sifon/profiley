@@ -75,6 +75,8 @@ class Profile(Lens):
         self,
         z=0,
         overdensity=500,
+        *,
+        z_s=None,
         los_loglimit=6,
         nsamples_los=200,
         resampling=20,
@@ -90,12 +92,14 @@ class Profile(Lens):
             redshift
         overdensity : int or float
             overdensity with respect to the background (does not apply to all Profile children; see each specific class for details)
-
+        z_s : float
+            convenience source redshift attribute for lensing calculations
         """
         super().__init__(z, **kwargs)
         # check overdensity
         self._assert_overdensity(overdensity)
         self.overdensity = overdensity
+        self.z_s = z_s
         # for numerical integration -- perhaps these could be passed
         # in a single dictionary
         self.los_loglimit = los_loglimit
