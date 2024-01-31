@@ -59,13 +59,14 @@ class Lens(BaseCosmo):
         return np.max([np.zeros_like(b), b], axis=0)
 
     # @float_args
-    def sigma_crit(self, z_s, frame="comoving"):
+    def sigma_crit(self, z_s=None):
         """Critical surface density for a source at redshift ``z_s``"""
-        assert frame in ("comoving", "physical", "proper")
         A = self._c**2 / (4 * np.pi * self._G)
-        if frame == "comoving":
+        if self.frame == "comoving":
             A = A / (1 + self.z) ** 2
-        return A / (self.Dl * self.Dls_over_Ds(z_s=z_s))
+        if z_s is None:
+            z_s = self.z_s
+        return A / (self.Dl * self.Dls_over_Ds(z_s))
 
     # @float_args
     def convergence(self, R, z_s=None, Roff=None, **kwargs):
