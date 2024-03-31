@@ -1,7 +1,7 @@
 from astropy import units as u
-from astropy.cosmology import Planck15
 import numpy as np
-from scipy.integrate import cumtrapz, quad, simps, trapz
+from scipy.integrate import cumtrapz, simps, trapz
+from scipy.stats import binned_statistic
 from time import time
 import warnings
 
@@ -12,12 +12,62 @@ try:
 except ImportError:
     has_ccl = False
 
-from .helpers.cosmology import BaseCosmo
 from .helpers.decorators import array, deprecated, inMpc
 from .helpers.lensing import Lens
 
 
 warnings.simplefilter("once", category=DeprecationWarning)
+
+
+def binned(func, r, rbins, *args, **kwargs):
+    """Return binned profile measurements
+
+    Parameters
+    ----------
+    func : callable
+        The function to be binned
+    r : np.ndarray, shape (M,)
+        Locations to calculate the unbinned profile. This array should be fine enough to ensure binned profile is accurate
+    rbins : np.ndarray, shape (N,)
+        bins applied to profile
+    args, kwargs : ``func`` (keyword) arguments
+
+    Returns
+    -------
+    rbinned : np.ndarray, shape (N-1,)
+        locations at which the binned profile is calculated. See note below.
+    binned : np.ndarray, shape (N-1,)
+        binned profile
+
+    .. note ::
+
+        The binned profile is returned at the mean ``r`` in each bin. If ``r`` is linearly-spaced then this will be the mid-point of each bin. If it is log-spaced then it is the logarithmic mid-point.
+
+    """
+    assert (r.ndim == 1) and (rbins.ndim == 1), "both r and rbins must be 1d"
+    p = func(r, *args, **kwargs)
+    # mean
+    digitized = np.digitize(r, rbins, right=True)
+    # note the weird bincount behavior!
+    s_ = np.s_[1:] if r.max() == rbins.max() else np.s_[1:-1]
+    rbinned = np.bincount(digitized, weights=r)[s_] / np.bincount(digitized)[s_]
+    # make a 2d image of the profile
+    r2d = np.linspace(-r.max(), r.max(), r.size)
+    y2d, x2d = np.meshgrid(r2d, r2d)
+    r2d = (x2d**2 + y2d**2) ** 0.5
+    r2d = r2d.reshape(r2d.shape + (1,) * (p.ndim - 1)) * np.ones(p.shape[1:])
+    profile_map = func(r2d, *args, **kwargs)
+    digitized = np.digitize(r2d, rbins, right=True)
+    pmap_reshaped = profile_map.reshape((-1,) + profile_map.shape[2:])
+    weights = digitized.reshape((-1,) + profile_map.shape[2:])
+    # iterate over rbins to get binned profile
+    profile_binned = np.array(
+        [
+            np.average(pmap_reshaped, weights=(weights == i), axis=0)
+            for i in range(1, rbins.size)
+        ]
+    )
+    return rbinned, profile_binned
 
 
 class Profile(Lens):
@@ -230,8 +280,8 @@ class Profile(Lens):
         """
         if overdensity == self.overdensity and background == self.background:
             if return_errors:
-                return self.mass, self.c, np.zeros(self.shape)
-            return self.mass, self.c
+                return self.mass, np.zeros(self.shape)
+            return self.mass
         # first integrate out to self.radius to see when we need a larger
         # or smaller radius
         rho_bg = self.get_rho_bg(background) * np.ones(self.shape)
