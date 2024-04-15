@@ -280,8 +280,8 @@ class Profile(Lens):
         """
         if overdensity == self.overdensity and background == self.background:
             if return_errors:
-                return self.mass, np.zeros(self.shape)
-            return self.mass
+                return self.radius, np.zeros(self.shape)
+            return self.radius
         # first integrate out to self.radius to see when we need a larger
         # or smaller radius
         rho_bg = self.get_rho_bg(background) * np.ones(self.shape)
