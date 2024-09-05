@@ -1,4 +1,4 @@
-from astropy import units as u
+from astropy import constants as cts, units as u
 import numpy as np
 from scipy.integrate import cumtrapz, simps, trapz
 from scipy.stats import binned_statistic
@@ -17,6 +17,9 @@ from .helpers.lensing import Lens
 
 
 warnings.simplefilter("once", category=DeprecationWarning)
+
+
+G = cts.G.to("Mpc^3/Msun/s^2").value
 
 
 def binned(func, r, rbins, *args, **kwargs):
@@ -77,7 +80,7 @@ class Profile(Lens):
 
     Defining your own profile is very simple. As an example, let's define a simple power-law profile with two free parameters, the normalization and the slope:
 
-    .. math ::
+    .. math::
 
         f(r | a, b) = a \\, r^b
 
@@ -541,6 +544,42 @@ class Profile(Lens):
             R, log_rmin=log_rmin, log_rmax=log_rmax, integral_samples=integral_samples
         )
         return s1 - s2
+
+    @inMpc
+    @array
+    def potential(
+        self,
+        r: np.ndarray,
+        *,
+        log_rmin: float = -10,
+        log_rmax: float = 5,
+        integral_samples: int = 1000,
+    ) -> np.ndarray:
+        """Gravitational potential at radius ``r`` in units of :math:`\\mathrm{Mpc^2\\,s^{-2}}`
+
+        .. note ::
+
+            This function returns the absolute value of the potential
+        """
+        R_inner = np.logspace(log_rmin, np.log10(r), integral_samples)
+        inner = (1 / r) * simps(R_inner**2 * self.profile(R_inner), R_inner, axis=0)
+        R_outer = np.logspace(np.log10(r), log_rmax, integral_samples)
+        outer = simps(R_outer * self.profile(R_outer), R_outer, axis=0)
+        return 4 * np.pi * G * (inner + outer)
+
+    @inMpc
+    @array
+    def escape_velocity(self, r: np.ndarray, **kwargs: dict) -> np.ndarray:
+        """Escape velocity in :math:`\\mathrm{km\\,s^{-1}}`, given by
+
+        .. math ::
+
+            v_\\mathrm{esc}(r) = \\sqrt{2|\\phi(r)|}
+
+        where :math:`\\phi(r)` is the gravitational potential
+        """
+        # the prefactor is Mpc to km
+        return 3.08578e19 * (2 * self.potential(r, **kwargs)) ** 0.5
 
     def offset(
         self,

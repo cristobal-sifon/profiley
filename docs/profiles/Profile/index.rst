@@ -12,15 +12,23 @@ profiles `here <../index.html>`_.
 +=======================================+=====================================================================+
 | ``profile(R)``                        | three-dimensional profile                                           |
 +---------------------------------------+---------------------------------------------------------------------+
-| ``profile_cumulative(R)``             | mean value within ``R``                                             |
+| ``cumulative(R)``                     | mean value within ``R``                                             |
 +---------------------------------------+---------------------------------------------------------------------+
 | ``mass_cumulative(R)``                | spherical integral within ``R``                                     |
 +---------------------------------------+---------------------------------------------------------------------+
-| ``projected(R, **kwargs)``            | Line-of-sight projected profile                                     |
+| ``projected(R)``                      | Line-of-sight projected profile                                     |
 +---------------------------------------+---------------------------------------------------------------------+
-| ``projected_cumulative(R, **kwargs)`` | Line-of-sight projected cumulative profile                          |
+| ``projected_cumulative(R)``           | Line-of-sight projected cumulative profile                          |
 +---------------------------------------+---------------------------------------------------------------------+
-| ``projected_excess(R, **kwargs)``     | difference between ``projected_cumulative(R)`` and ``projected(R)`` |
+| ``projected_excess(R)``               | difference between ``projected_cumulative(R)`` and ``projected(R)`` |
++---------------------------------------+---------------------------------------------------------------------+
+| ``potential(R)``                      | gravitational potential                                             |
++---------------------------------------+---------------------------------------------------------------------+
+| ``escape_velocity(R)``                | escape velocity                                                     |
++---------------------------------------+---------------------------------------------------------------------+
+| ``mdelta(overdensity, background)``   | mass within a specified overdensity                                 |
++---------------------------------------+---------------------------------------------------------------------+
+| ``rdelta(overdensity, background)``   | radius enclosing a specified overdensity                            |
 +---------------------------------------+---------------------------------------------------------------------+
 
 where ``R`` are the radii at which to return the profiles. Where available,
@@ -30,11 +38,22 @@ to the precision (and speed) of numerical integration. See below.
 
 .. numerical:
 
-Numerical profile projections
-+++++++++++++++++++++++++++++
+Numerical calculations
+++++++++++++++++++++++
 
-If the projections of a given profile do not have analytical forms, they are
+If any of the above methods are not defined analytically, they are
 calculated by numerical integration, using ``scipy.integrate.simps``.
+
+
+Cumulative profile
+------------------
+
+Mean value of the profile within the specified radius:
+
+.. math::
+
+    \bar\rho(R) = \frac{\int_{V(<R)} d^3r\,\rho(r)}{\int_{V(<R)} d^3r}
+
 
 Cumulative mass
 ---------------
@@ -46,15 +65,6 @@ to the enclosed mass:
 
     M(<R) = \int_{V(<R)}d^3r\,\rho(r) = 4\pi\int_0^R dr\,r^2\rho(r)
 
-
-Cumulative profile
-------------------
-
-Mean value of the profile within the specified radius:
-
-.. math::
-
-    \bar\rho(R) = \frac{\int_{V(<R)} d^3r\,\rho(r)}{\int_{V(<R)} d^3r}
 
 Projected profile
 -----------------
@@ -92,6 +102,29 @@ directly related to the weak lensing shape distortion, called *shear*,
 :math:`\gamma`, through :math:`\gamma=\Delta\Sigma/\Sigma_\mathrm{c}`, where
 :math:`\Sigma_\mathrm{c}` is the critical surface density (see `Lensing`_).
 
+Gravitational potential
+-----------------------
+
+The Poisson equation implies that the gravitational potential can be calculated as
+
+.. math::
+
+    \phi(r) = 4\pi G\left[\frac1r\int_0^r \rho(y)y^2\,dy + \int_r^\infty \rho(y)y\,dy\right]
+
+The gravitational potential is returned in units of :math:`\mathrm{Mpc^2\,s^{-2}}`. 
+
+Escape velocity
+---------------
+
+The escape velocity is related to the gravitational potential through
+
+.. math::
+
+    v_\mathrm{esc}(r) = \sqrt{2\phi(r)}
+
+and is returned in :math:`\mathrm{km\,s^{-1}}`.
+
+
 Precision of numerical integration
 ----------------------------------
 
@@ -99,6 +132,7 @@ Several optional arguments allow the user to find their own sweet-spot in the
 trade-off between precision and execution time. Using the default parameters the
 precision of the numerical calculations for an NFW profile is better than 0.1%
 at all radii, as demonstrated in the |ex-numeric|_.
+
 
 .. offset:
 
