@@ -20,7 +20,7 @@ Some examples of the functionality available can be found in the `examples
 References
 ==========
 
-``profiley`` has been used in `Madhavacheril et al. (2020)`__.
+``profiley`` has been used in `Madhavacheril et al. (2020)`__ and `Shirasaki et al. (2024)`__.
 
 
 Change Log
@@ -69,7 +69,9 @@ Version 1.2.2
 
 
 .. _Madhavacheril: https://ui.adsabs.harvard.edu/abs/2020ApJ...903L..13M/abstract
+.. _Shirasaki: https://ui.adsabs.harvard.edu/abs/2024arXiv240708201S/abstract
 
 __ Madhavacheril_
+__ Shirasaki_
 
 
