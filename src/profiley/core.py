@@ -19,7 +19,7 @@ from .helpers.lensing import Lens
 warnings.simplefilter("once", category=DeprecationWarning)
 
 
-G = cts.G.to("Mpc^3/Msun/s^2").value
+G = cts.G.to(u.Mpc**3 / u.Msun / u.s**2).value
 
 
 def binned(func, r, rbins, *args, **kwargs):
@@ -239,13 +239,13 @@ class Profile(Lens):
         overdensity: float,
         background: str,
         *,
+        return_errors: bool = False,
         rtol: float = 0.001,
         trial_range: float = 0.1,
         trial_size: int = 20,
         max_trials: int = 100,
         log_rmin: float = -10,
         integral_samples: int = 1000,
-        return_errors: bool = False,
     ):
         """
         Calculate the radius within which the density equals a specified overdensity
@@ -551,32 +551,61 @@ class Profile(Lens):
         self,
         r: np.ndarray,
         *,
+        accelerating: bool = True,
         log_rmin: float = -10,
         log_rmax: float = 5,
         integral_samples: int = 1000,
     ) -> np.ndarray:
         """Gravitational potential at radius ``r`` in units of :math:`\\mathrm{Mpc^2\\,s^{-2}}`
 
-        .. note ::
+        Parameters
+        ----------
+        R : float or array of float
+            projected distance(s)
+        accelerating : bool
+            whether to calculate the potential in an accelerating universe, following Eq 7 of `Miller et al. (2016) <https://ui.adsabs.harvard.edu/abs/2016ApJ...822...41M/abstract>`_. The total mass is taken to be :math:`M_\\mathrm{200m}}` when defining the turnaround radius :math:`r_\\mathrm{eq}`.
 
-            This function returns the absolute value of the potential
+        Returns
+        -------
+        potential : ndarray
+            absolute value of the gravitational potential
         """
         R_inner = np.logspace(log_rmin, np.log10(r), integral_samples)
         inner = (1 / r) * simps(R_inner**2 * self.profile(R_inner), R_inner, axis=0)
-        R_outer = np.logspace(np.log10(r), log_rmax, integral_samples)
+        # print("R_inner =", R_inner)
+        # print("inner =", inner)
+        if accelerating:
+            if self.frame == "comoving":
+                q = self.cosmo.Om0 / 2 - self.cosmo.Ode(self.z)
+            else:
+                q = self.cosmo.Om(self.z) / 2 - self.cosmo.Ode(self.z)
+            # in Mpc
+            r_eq = (
+                -G
+                * self.mdelta(200, "m")[0]
+                / q
+                / self.cosmo.H(self.z).to(1 / u.s).value ** 2
+            ) ** (1 / 3)
+            R_outer = np.logspace(np.log10(r), np.log10(r_eq), integral_samples)
+        else:
+            R_outer = np.logspace(np.log10(r), log_rmax, integral_samples)
+        # print("R_outer =", R_outer.shape)
         outer = simps(R_outer * self.profile(R_outer), R_outer, axis=0)
+        # print("outer =", outer.shape)
         return 4 * np.pi * G * (inner + outer)
 
     @inMpc
     @array
-    def escape_velocity(self, r: np.ndarray, **kwargs: dict) -> np.ndarray:
+    def escape_velocity(
+        self, r: np.ndarray, *, accelerating: bool = True, **kwargs: dict
+    ) -> np.ndarray:
         """Escape velocity in :math:`\\mathrm{km\\,s^{-1}}`, given by
 
         .. math ::
 
             v_\\mathrm{esc}(r) = \\sqrt{2|\\phi(r)|}
 
-        where :math:`\\phi(r)` is the gravitational potential
+        where :math:`\\phi(r)` is the gravitational potential. See ``self.potential`` for parameters
         """
         # the prefactor is Mpc to km
         return 3.08578e19 * (2 * self.potential(r, **kwargs)) ** 0.5
