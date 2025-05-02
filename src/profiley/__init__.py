@@ -3,3 +3,4 @@
 __version__ = "2.0.0a8"
 
 from .core import Profile, binned
+from .helpers import filtering, lensing, hankel, binning, cosmology
