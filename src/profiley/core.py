@@ -1,9 +1,15 @@
 from astropy import constants as cts, units as u
 import numpy as np
-from scipy.integrate import cumtrapz, simps, trapz
 from scipy.stats import binned_statistic
 from time import time
 import warnings
+try:
+    from scipy.integrate import cumtrapz, simps, trapz
+except:
+    from scipy.integrate import cumulative_trapezoid as cumtrapz
+    from scipy.integrate import trapezoid as trapz
+    from scipy.integrate import simpson as simps
+    
 
 try:
     import pyccl as ccl
