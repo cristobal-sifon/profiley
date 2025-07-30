@@ -1,6 +1,9 @@
 """Stand-alone numerical implementations"""
 import numpy as np
-from scipy.integrate import trapz
+try:
+    from scipy.integrate import trapz
+except:
+    from scipy.integrate import trapezoid as trapz
 from scipy.interpolate import UnivariateSpline
 
 
