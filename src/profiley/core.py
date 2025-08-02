@@ -1,8 +1,6 @@
 from astropy import constants as cts, units as u
 import numpy as np
-from scipy.integrate import cumtrapz, simps, trapz
-from scipy.stats import binned_statistic
-from time import time
+from scipy.integrate import cumulative_trapezoid, simpson, trapezoid
 import warnings
 
 try:
@@ -105,17 +103,7 @@ class Profile(Lens):
     Profile projections
     -------------------
 
-    If the projection of this profile is analytical, any or all of the following methods can also be specified: ::
-
-        projected(self, R)
-        projected_cumulative(self, R)
-        projected_excess(self, R)
-        offset_profile(self, R, Roff)
-        offset_projected(self, R, Roff)
-        offset_projected_cumulative(self, R, Roff)
-        offset_projected_excess(self, R, Roff)
-
-    If it does not have analytical expressions, these methods will also exist, but they will be calculated numerically, so they may be somewhat slower depending on the precision required.
+    If the projection of this profile is analytical, any or all of the methods in the ``Profile`` base class can be implemented. If they do not have analytical expressions, these methods will also exist, but they will be calculated numerically, so they may be somewhat slower depending on the precision required.
 
     Cosmology
     ---------
@@ -162,6 +150,7 @@ class Profile(Lens):
         self.left_samples = left_samples
         # empty init
         self.__dimensions = None
+        self._r_eq = None
 
     @property
     def _one(self):
@@ -174,6 +163,28 @@ class Profile(Lens):
         if self.__dimensions is None:
             self.__dimensions = tuple([1] * len(self.shape))
         return self.__dimensions
+
+    @property
+    def equivalence_radius(self):
+        """ "Equivalence radius as defined in `Miller et al. (2016) <<https://ui.adsabs.harvard.edu/abs/2016ApJ...822...41M/abstract>`_"""
+        if self._r_eq is None:
+            if self.frame == "comoving":
+                q = self.cosmo.Om0 / 2 - self.cosmo.Ode(self.z)
+            else:
+                q = self.cosmo.Om(self.z) / 2 - self.cosmo.Ode(self.z)
+            # in Mpc
+            self._r_eq = (
+                -G
+                * self.mdelta(200, "m")[0]
+                / q
+                / self.cosmo.H(self.z).to(1 / u.s).value ** 2
+            ) ** (1 / 3)
+        return self._r_eq
+
+    @property
+    def r_eq(self):
+        """alias for ``self.equivalence_radius``"""
+        return self.equivalence_radius
 
     @property
     def shape(self):
@@ -208,7 +219,7 @@ class Profile(Lens):
         if np.iterable(args_product):
             self._shape = args_product.shape
         else:
-            self._shape = (0,)
+            self._shape = (1,)
 
     ### methods ###
 
@@ -360,6 +371,25 @@ class Profile(Lens):
 
     @inMpc
     @array
+    def escape_velocity(
+        self, r: np.ndarray, *, accelerating: bool = True, **kwargs: dict
+    ) -> np.ndarray:
+        """Escape velocity in :math:`\\mathrm{km\\,s^{-1}}`, given by
+
+        .. math ::
+
+            v_\\mathrm{esc}(r) = \\sqrt{2|\\phi(r)|}
+
+        where :math:`\\phi(r)` is the gravitational potential. See ``self.potential`` for parameters
+        """
+        # the prefactor is Mpc to km
+        phi = self.potential(r, **kwargs)
+        phi[phi < 0] = 0
+        v_esc = 3.08578e19 * (2 * phi) ** 0.5
+        return v_esc
+
+    @inMpc
+    @array
     def mass_cumulative(
         self, r: np.ndarray, *, log_rmin: float = -10, integral_samples: int = 1000
     ) -> np.ndarray:
@@ -383,7 +413,7 @@ class Profile(Lens):
 
         """
         R_int = np.logspace(log_rmin, np.log10(r), integral_samples)
-        return 4 * np.pi * simps(R_int**2 * self.profile(R_int), R_int, axis=0)
+        return 4 * np.pi * simpson(R_int**2 * self.profile(R_int), R_int, axis=0)
 
     @inMpc
     def projected(
@@ -424,11 +454,52 @@ class Profile(Lens):
         )
         R_los = np.logspace(log_rmin, log_rmax, integral_samples)
         # R = (R_los**2 + R[..., None] ** 2) ** 0.5
-        # return 2 * simps(self.profile(R), R_los, axis=len(R.shape) - 1)
+        # return 2 * simpson(self.profile(R), R_los, axis=len(R.shape) - 1)
         # we must add dimensions to R_los rather than R so that @array
         # works as expected. It can be quite slow though
         R = (np.expand_dims(R_los, tuple(range(1, R.ndim + 1))) ** 2 + R**2) ** 0.5
-        return 2 * simps(self.profile(R), R_los, axis=0)
+        return 2 * simpson(self.profile(R), R_los, axis=0)
+
+    @inMpc
+    @array
+    def potential(
+        self,
+        r: np.ndarray,
+        *,
+        accelerating: bool = True,
+        log_rmin: float = -10,
+        log_rmax: float = 5,
+        integral_samples: int = 1000,
+    ) -> np.ndarray:
+        """Gravitational potential at radius ``r`` in units of :math:`\\mathrm{Mpc^2\\,s^{-2}}`
+
+        Parameters
+        ----------
+        R : float or array of float
+            projected distance(s)
+        accelerating : bool
+            whether to calculate the potential in an accelerating universe, following Eq 7 of `Miller et al. (2016) <https://ui.adsabs.harvard.edu/abs/2016ApJ...822...41M/abstract>`_. The total mass is taken to be :math:`M_\\mathrm{200m}}` when defining the turnaround radius :math:`r_\\mathrm{eq}`.
+
+        Returns
+        -------
+        potential : ndarray
+            absolute value of the gravitational potential
+        """
+        R_inner = np.logspace(log_rmin, np.log10(r), integral_samples)
+        inner = (1 / r) * simpson(R_inner**2 * self.profile(R_inner), R_inner, axis=0)
+        R_outer = np.logspace(np.log10(r), log_rmax, integral_samples)
+        outer = simpson(R_outer * self.profile(R_outer), R_outer, axis=0)
+        potential = 4 * np.pi * G * (inner + outer)
+        if accelerating:
+            # note that unlike R_inner and R_outer above, these will not be 1-d in general
+            R_inner = np.logspace(log_rmin, np.log10(self.r_eq), integral_samples)
+            R_outer = np.logspace(np.log10(self.r_eq), log_rmax, integral_samples)
+            inner = (1 / self.r_eq) * simpson(
+                R_inner**2 * self.profile(R_inner), R_inner, axis=0
+            )
+            outer = simpson(R_outer * self.profile(R_outer), R_outer, axis=0)
+            potential = potential - 4 * np.pi * G * (inner + outer)
+        return potential
 
     @inMpc
     def projected_cumulative(
@@ -495,7 +566,7 @@ class Profile(Lens):
         )
         # these correspond to the indices where the original radii are stored
         j = np.arange(1 + left_samples, Ro.shape[0], resampling)
-        integ = cumtrapz(
+        integ = cumulative_trapezoid(
             self._expand_dims(Ro) * self.projected(Ro, log_rmin=log_rmin, **kwargs),
             Ro,
             initial=0,
@@ -544,71 +615,6 @@ class Profile(Lens):
             R, log_rmin=log_rmin, log_rmax=log_rmax, integral_samples=integral_samples
         )
         return s1 - s2
-
-    @inMpc
-    @array
-    def potential(
-        self,
-        r: np.ndarray,
-        *,
-        accelerating: bool = True,
-        log_rmin: float = -10,
-        log_rmax: float = 5,
-        integral_samples: int = 1000,
-    ) -> np.ndarray:
-        """Gravitational potential at radius ``r`` in units of :math:`\\mathrm{Mpc^2\\,s^{-2}}`
-
-        Parameters
-        ----------
-        R : float or array of float
-            projected distance(s)
-        accelerating : bool
-            whether to calculate the potential in an accelerating universe, following Eq 7 of `Miller et al. (2016) <https://ui.adsabs.harvard.edu/abs/2016ApJ...822...41M/abstract>`_. The total mass is taken to be :math:`M_\\mathrm{200m}}` when defining the turnaround radius :math:`r_\\mathrm{eq}`.
-
-        Returns
-        -------
-        potential : ndarray
-            absolute value of the gravitational potential
-        """
-        R_inner = np.logspace(log_rmin, np.log10(r), integral_samples)
-        inner = (1 / r) * simps(R_inner**2 * self.profile(R_inner), R_inner, axis=0)
-        # print("R_inner =", R_inner)
-        # print("inner =", inner)
-        if accelerating:
-            if self.frame == "comoving":
-                q = self.cosmo.Om0 / 2 - self.cosmo.Ode(self.z)
-            else:
-                q = self.cosmo.Om(self.z) / 2 - self.cosmo.Ode(self.z)
-            # in Mpc
-            r_eq = (
-                -G
-                * self.mdelta(200, "m")[0]
-                / q
-                / self.cosmo.H(self.z).to(1 / u.s).value ** 2
-            ) ** (1 / 3)
-            R_outer = np.logspace(np.log10(r), np.log10(r_eq), integral_samples)
-        else:
-            R_outer = np.logspace(np.log10(r), log_rmax, integral_samples)
-        # print("R_outer =", R_outer.shape)
-        outer = simps(R_outer * self.profile(R_outer), R_outer, axis=0)
-        # print("outer =", outer.shape)
-        return 4 * np.pi * G * (inner + outer)
-
-    @inMpc
-    @array
-    def escape_velocity(
-        self, r: np.ndarray, *, accelerating: bool = True, **kwargs: dict
-    ) -> np.ndarray:
-        """Escape velocity in :math:`\\mathrm{km\\,s^{-1}}`, given by
-
-        .. math ::
-
-            v_\\mathrm{esc}(r) = \\sqrt{2|\\phi(r)|}
-
-        where :math:`\\phi(r)` is the gravitational potential. See ``self.potential`` for parameters
-        """
-        # the prefactor is Mpc to km
-        return 3.08578e19 * (2 * self.potential(r, **kwargs)) ** 0.5
 
     def offset(
         self,
@@ -682,7 +688,7 @@ class Profile(Lens):
         theta = np.linspace(0, 2 * np.pi, theta_samples)
         theta1 = theta.reshape((theta_samples, *self._dimensions, 1))
         x = (Roff**2 + R**2 + 2 * R * Roff * np.cos(theta1)) ** 0.5
-        off = np.array([trapz(func(i, **kwargs), theta, axis=0) for i in x])
+        off = np.array([trapezoid(func(i, **kwargs), theta, axis=0) for i in x])
 
         if weights is not None:
             # create a slice so we can multiply by weights
@@ -690,7 +696,9 @@ class Profile(Lens):
             s_ = [None] * off.ndim
             s_[0] = slice(None)
             Roff = np.squeeze(Roff)
-            off = trapz(weights[tuple(s_)] * off, Roff, axis=0) / trapz(weights, Roff)
+            off = trapezoid(weights[tuple(s_)] * off, Roff, axis=0) / trapezoid(
+                weights, Roff
+            )
         return off / (2 * np.pi)
 
     def offset_profile(self, R, Roff, **kwargs):

@@ -1,6 +1,7 @@
 """Stand-alone numerical implementations"""
+
 import numpy as np
-from scipy.integrate import trapz
+from scipy.integrate import simpson
 from scipy.interpolate import UnivariateSpline
 
 
@@ -32,7 +33,7 @@ def offset(profile, R, Roff, weights=None, *, theta_samples=360):
         weights to apply to each profile corresponding to every
         value of ``Roff``. See ``Returns`` below
     theta_samples : int
-        number of samples for the angular integral from 0 to 2*pi
+        number of samples for the angular integral from 0 to :math:`2\\pi`
     weights : array of floats, shape (P,)
 
     Returns
@@ -72,7 +73,7 @@ def offset(profile, R, Roff, weights=None, *, theta_samples=360):
     x = (Roff**2 + R**2 + 2 * R * Roff * np.cos(theta[:, None, None])) ** 0.5
     if profile.ndim == 1:
         func = UnivariateSpline(R, profile, k=1, s=0)
-        off = trapz(func(x), theta, axis=0)
+        off = simpson(func(x), theta, axis=0)
     else:
         shape = profile.shape
         ndim = profile.ndim
@@ -80,14 +81,26 @@ def offset(profile, R, Roff, weights=None, *, theta_samples=360):
         if ndim == 2:
             # we have to iterate over additional dimensions
             funcs = (UnivariateSpline(R, pi, k=1, s=0) for pi in profile)
-            off = np.array([trapz(f(x), theta, axis=0) for f in funcs])
+            off = np.array([simpson(f(x), theta, axis=0) for f in funcs])
         if ndim == 3:
             funcs = (
                 (UnivariateSpline(R, pij, k=1, s=0) for pij in pi) for pi in profile
             )
             off = np.array(
-                [[trapz(fij(x), theta, axis=0) for fij in fi] for fi in funcs]
+                [[simpson(fij(x), theta, axis=0) for fij in fi] for fi in funcs]
             )
     if weights is not None:
-        off = trapz(weights[:, None] * off, Roff, axis=-2) / trapz(weights, Roff[:, 0])
+        off = simpson(weights[:, None] * off, Roff, axis=-2) / simpson(weights, Roff[:, 0])
     return off / (2 * np.pi)
+
+
+def project(
+    func, R, log_rmin: float = -10, log_rmax: float = 5, integral_samples: int = 1005
+):
+    R_los = np.logspace(log_rmin, log_rmax, integral_samples)
+    # we must add dimensions to R_los rather than R so that @array
+    # works as expected. It can be quite slow though
+    print("R =", R, R.shape, R_los.shape)
+    R = (np.expand_dims(R_los, tuple(range(1, R.ndim + 1))) ** 2 + R**2) ** 0.5
+    print("R =", R, R.shape)
+    return 2 * simpson(func(R), R_los, axis=0)
