@@ -19,6 +19,8 @@ warnings.simplefilter("once", category=DeprecationWarning)
 
 G = cts.G.to(u.Mpc**3 / u.Msun / u.s**2).value
 
+from line_profiler import profile
+
 
 def binned(func, r, rbins, *args, **kwargs):
     """Return binned profile measurements
@@ -60,11 +62,11 @@ def binned(func, r, rbins, *args, **kwargs):
     profile_map = func(r2d, *args, **kwargs)
     digitized = np.digitize(r2d, rbins, right=True)
     pmap_reshaped = profile_map.reshape((-1,) + profile_map.shape[2:])
-    weights = digitized.reshape((-1,) + profile_map.shape[2:])
+    binmask = digitized.reshape((-1,) + profile_map.shape[2:])
     # iterate over rbins to get binned profile
     profile_binned = np.array(
         [
-            np.average(pmap_reshaped, weights=(weights == i), axis=0)
+            np.average(pmap_reshaped, weights=(binmask == i), axis=0)
             for i in range(1, rbins.size)
         ]
     )
@@ -453,11 +455,9 @@ class Profile(Lens):
             f" {integral_samples} ({type(integral_samples)})"
         )
         R_los = np.logspace(log_rmin, log_rmax, integral_samples)
-        # R = (R_los**2 + R[..., None] ** 2) ** 0.5
-        # return 2 * simpson(self.profile(R), R_los, axis=len(R.shape) - 1)
         # we must add dimensions to R_los rather than R so that @array
         # works as expected. It can be quite slow though
-        R = (np.expand_dims(R_los, tuple(range(1, R.ndim + 1))) ** 2 + R**2) ** 0.5
+        R = np.hypot(R_los[(slice(None),) + (None,) * R.ndim], R)
         return 2 * simpson(self.profile(R), R_los, axis=0)
 
     @inMpc
