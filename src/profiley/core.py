@@ -4,11 +4,11 @@ from scipy.stats import binned_statistic
 from time import time
 import warnings
 try:
-    from scipy.integrate import cumtrapz, simps, trapz
+    from scipy.integrate import cumtrapz as cumulative_trapezoid, simps as simpson, trapz as trapezoid
 except:
-    from scipy.integrate import cumulative_trapezoid as cumtrapz
-    from scipy.integrate import trapezoid as trapz
-    from scipy.integrate import simpson as simps
+    from scipy.integrate import cumulative_trapezoid
+    from scipy.integrate import trapezoid
+    from scipy.integrate import simpson
     
 
 try:
