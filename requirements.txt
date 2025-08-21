@@ -3,3 +3,4 @@ numpy>=1.16.0,<2.0
 scipy>=1.0,<2.0
 mpmath
 numba>=0.61
+line-profiler
