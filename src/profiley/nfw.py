@@ -331,7 +331,7 @@ class TNFW(BaseNFW):
     the truncation radius in units of the scale radius.
 
     Analytical expressions for projected profiles have been derived by
-    Baltz, Marshall & Oguri for the cases of ``eta={1,2}``. Here the
+    Baltz, Marshall & Oguri for the cases of :math:`\\eta=\\{1,2\\}`. Here the
     projected profiles are calculated numerically.
 
     Parameters

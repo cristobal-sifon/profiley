@@ -5,7 +5,7 @@ import os
 import re
 from setuptools import find_packages, setup
 
-# folder where pygmos is stored
+# folder where profiley is stored
 here = os.path.abspath(os.path.dirname(__file__))
 
 
