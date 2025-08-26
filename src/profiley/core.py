@@ -1,7 +1,10 @@
 from astropy import constants as cts, units as u
 import numpy as np
-from scipy.integrate import cumulative_trapezoid, simpson, trapezoid
+from scipy.integrate import cumulative_trapezoid, trapezoid, simpson
+from scipy.stats import binned_statistic
+from time import time
 import warnings
+
 
 try:
     import pyccl as ccl
@@ -18,8 +21,6 @@ warnings.simplefilter("once", category=DeprecationWarning)
 
 
 G = cts.G.to(u.Mpc**3 / u.Msun / u.s**2).value
-
-from line_profiler import profile
 
 
 def binned(func, r, rbins, *args, **kwargs):

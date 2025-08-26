@@ -65,6 +65,7 @@ class Lens(BaseCosmo):
         if self.frame == "comoving":
             A = A / (1 + self.z) ** 2
         if z_s is None:
+            if (self.z_s is None): raise ValueError
             z_s = self.z_s
         return A / (self.Dl * self.Dls_over_Ds(z_s))
 
