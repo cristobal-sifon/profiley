@@ -2,12 +2,7 @@
 
 from numba import njit
 import numpy as np
-try:
-    from scipy.integrate import cumtrapz as cumulative_trapezoid, simps as simpson, trapz as trapezoid
-except:
-    from scipy.integrate import cumulative_trapezoid
-    from scipy.integrate import trapezoid
-    from scipy.integrate import simpson
+from scipy.integrate import cumulative_trapezoid, trapezoid, simpson
 from scipy.interpolate import UnivariateSpline
 
 
