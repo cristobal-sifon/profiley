@@ -419,6 +419,7 @@ class Profile(Lens):
         return 4 * np.pi * simpson(R_int**2 * self.profile(R_int), R_int, axis=0)
 
     @inMpc
+    @array
     def projected(
         self,
         R: np.ndarray,
