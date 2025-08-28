@@ -91,7 +91,7 @@ def offset(profile, R, Roff, weights=None, *, theta_samples=360):
                 [[simpson(fij(x), theta, axis=0) for fij in fi] for fi in funcs]
             )
     if weights is not None:
-        off = simpson(weights[:, None] * off, Roff, axis=-2) / simpson(
+        off = trapezoid(weights[:, None] * off, Roff, axis=-2) / trapezoid(
             weights, Roff[:, 0]
         )
     return off / (2 * np.pi)
