@@ -49,11 +49,9 @@ class BaseCosmo:
 
     @property
     def mean_density(self):
-        """Mean density in Msun/Mpc^3"""
+        """Mean matter density in Msun/Mpc^3"""
         self._mean_density = (
-            (self.cosmo.critical_density(self.z) * self.cosmo.Om0)
-            .to(u.Msun / u.Mpc**3)
-            .value
+            (self.cosmo.critical_density0 * self.cosmo.Om0).to(u.Msun / u.Mpc**3).value
         )
         if self.frame == "comoving":
             self._mean_density = self._mean_density * np.ones_like(self.z)
