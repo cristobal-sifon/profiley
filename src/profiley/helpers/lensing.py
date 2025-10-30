@@ -1,6 +1,7 @@
 from astropy import units as u
 from astropy.cosmology import Planck15
 import numpy as np
+import warnings
 
 from .cosmology import BaseCosmo
 from .decorators import float_args
@@ -12,7 +13,8 @@ class Lens(BaseCosmo):
     Parameters
     ----------
     z : float or np.ndarray
-        redshift
+        redshift. Since profiles can be calculated for z=0 but lensing properties
+        cannot, a warning will be raised if :math:`z=0`.
 
     Optional parameters
     -------------------
@@ -22,6 +24,8 @@ class Lens(BaseCosmo):
         comoving or physical frame for distances
     kwargs : dict
         additional arguments passed to ``BaseCosmo``
+
+
     """
 
     def __init__(self, z, cosmo=Planck15, frame="comoving", **kwargs):
@@ -30,6 +34,11 @@ class Lens(BaseCosmo):
         self._chi = None
         self._Dl = None
         self._Wk = None
+        assert np.all(self.z >= 0), "Redshifts must be non-negative"
+        if np.any(self.z == 0):
+            warnings.warn(
+                "Some redshifts set to zero; lensing calculations will fail in these cases."
+            )
 
     @property
     def chi(self):
@@ -65,7 +74,8 @@ class Lens(BaseCosmo):
         if self.frame == "comoving":
             A = A / (1 + self.z) ** 2
         if z_s is None:
-            if (self.z_s is None): raise ValueError
+            if self.z_s is None:
+                raise ValueError
             z_s = self.z_s
         return A / (self.Dl * self.Dls_over_Ds(z_s))
 
@@ -107,7 +117,6 @@ class Lens(BaseCosmo):
 
 
 class Source(BaseCosmo):
-
     """Lensed source class
 
     Parameters

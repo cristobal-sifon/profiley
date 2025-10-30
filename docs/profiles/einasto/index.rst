@@ -10,12 +10,13 @@ The ``einasto`` module implements the |Einasto1965|_ density profile,
                 \left[\left(\frac{r}{r_\mathrm{s}}\right)^\alpha - 1\right]
             \right)
 
-where :math:`\alpha>0`. The calling signature is
+where :math:`\rho_\mathrm{s}`, :math:`r_\mathrm{s}`, and
+:math:`\alpha` are all strictly positive quantities. The calling signature is
 
 .. code-block::
 
     from profiley.einasto import Einasto
-    Einasto(rho_s, r_s, alpha, **kwargs)
+    Einasto(rho_s, r_s, alpha, z, **kwargs)
 
 Unlike the NFW profile, the mass profile derived from this density profile
 converges to a total mass

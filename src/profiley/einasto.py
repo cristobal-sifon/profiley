@@ -19,8 +19,8 @@ class Einasto(Profile):
                         \\right]
                 \\right)
 
-    with :math:`\\rho_\mathrm{s}`, :math:`r_\mathrm{s}`, and
-    :math:`\alpha` all strictly positive quantities.
+    with :math:`\\rho_\\mathrm{s}`, :math:`r_\\mathrm{s}`, and
+    :math:`\\alpha` all strictly positive quantities.
 
     Parameters
     ----------
@@ -32,12 +32,11 @@ class Einasto(Profile):
         -2. If not an astropy Quantity, assumed to be in Mpc
     alpha : float or ndarray
         slope steepening
-
-    .. warning:
-        The ``mdelta`` method has not yet been implemented
+    z : float or ndarray
+        redshift
     """
 
-    def __init__(self, rho_s, r_s, alpha, z=0, **kwargs):
+    def __init__(self, rho_s, r_s, alpha, z, **kwargs):
         if isinstance(rho_s, u.Quantity):
             rho_s = rho_s.to(u.Msun / u.Mpc**3).value
         if isinstance(r_s, u.Quantity):
@@ -47,6 +46,13 @@ class Einasto(Profile):
         self.rho_s = rho_s
         self.r_s = r_s
         self.alpha = alpha
+        self._ensure_values()
+
+    def _ensure_values(self):
+        assert self.rho_s > 0, "rho_s must be positive"
+        assert self.r_s > 0, "r_s must be positive"
+        assert self.alpha > 0, "alpha must be positive"
+        assert self.z >= 0, "z must be non-negative"
 
     ### attributes ###
 
@@ -81,22 +87,3 @@ class Einasto(Profile):
             / sc.gamma(a)
             * (sc.gamma(a) - math.gamma(a, 2 * x**self.alpha / self.alpha))
         )
-
-    def _mdelta(
-        self, overdensity, background="c", err=1e-3, n_guess_rng=1000, max_iter=50
-    ):
-        """Iteratively estimate the mass within a spherical overdensity
-        radius
-
-        Parameters
-        ----------
-        overdensity : int or float
-            spherical overdensity within which to calculate the mass
-
-        .. warning::
-            Not implemented
-        """
-        self._assert_background(background)
-        self._assert_overdensity(overdensity)
-
-        return

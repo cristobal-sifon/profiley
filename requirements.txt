@@ -1,5 +1,5 @@
 astropy>=4.0
-numpy>=1.16.0,<2.0
+numpy>=1.16
 scipy>=1.7
 mpmath
 numba>=0.61
